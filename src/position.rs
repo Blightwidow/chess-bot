@@ -87,8 +87,18 @@ impl Position {
         }
 
         if fen_parts[3] != "-" {
-            // self.states.last_mut().unwrap().en_passant_square = fen_parts[3].parse::<Square>().unwrap();
-            // TODO: Parse en passant square
+            let file = "abcdefgh"
+                .chars()
+                .into_iter()
+                .position(|c| c == fen_parts[3].chars().nth(0).unwrap())
+                .unwrap();
+            let rank = "12345678"
+                .chars()
+                .into_iter()
+                .position(|c| c == fen_parts[3].chars().nth(1).unwrap())
+                .unwrap();
+
+            self.states.last_mut().unwrap().en_passant_square = square_of(file, rank);
         }
 
         // TODO: Parse last two parts of FEN
@@ -147,15 +157,13 @@ impl Position {
         }
 
         if move_type == MoveTypes::CASTLING {
-            self.castle(us, from, to);
-        } else if new_state.castling_rights & self.castling_masks[from] != 0
-            || new_state.castling_rights & self.castling_masks[to] != 0
-        {
-            new_state.castling_rights &= !self.castling_masks[from];
-            new_state.castling_rights &= !self.castling_masks[to];
+            self.castle(us, from, to, false);
+        } else {
+            self.move_piece(piece, from, to);
         }
 
-        self.move_piece(piece, from, to);
+        new_state.castling_rights ^= self.castling_masks[from];
+        new_state.castling_rights ^= self.castling_masks[to];
 
         for side in [us, them] {
             self.pinned_bb[side] = self.pinned_bb(side);
@@ -206,7 +214,7 @@ impl Position {
         }
 
         if move_type == MoveTypes::CASTLING {
-            // TODO: Undo castling
+            self.castle(us, from, to, true);
         } else {
             self.move_piece(piece, to, from);
             if last_state.captured_piece != PieceType::NONE {
@@ -271,10 +279,35 @@ impl Position {
         self.by_color_bb[Sides::BOTH] ^= bb_from ^ bb_to;
     }
 
-    fn castle(&self, side: CastlingRight, from: Square, to: Square) {
+    fn castle(&mut self, side: Side, from: Square, to: Square, undo: bool) {
         assert!(side == Sides::WHITE || side == Sides::BLACK);
 
-        // TODO: Handle castling
+        let king_side: bool = to > from;
+        let rook_from: Square = to;
+        let rook_to: Square = match king_side {
+            true => rook_from - 2,
+            false => rook_from + 3,
+        };
+        let king_to: Square = match king_side {
+            true => from + 2,
+            false => from - 2,
+        };
+
+        let king: Piece = make_piece(side, PieceType::KING);
+        let rook: Piece = make_piece(side, PieceType::ROOK);
+        if undo {
+            self.remove_piece(king, king_to);
+            self.remove_piece(rook, rook_to);
+
+            self.put_piece(king, from);
+            self.put_piece(rook, rook_from);
+        } else {
+            self.remove_piece(king, from);
+            self.remove_piece(rook, rook_from);
+
+            self.put_piece(king, king_to);
+            self.put_piece(rook, rook_to);
+        }
     }
 
     pub fn checkers(&self, defending_side: Side) -> Vec<Square> {
@@ -380,15 +413,13 @@ impl Position {
         // Castling moves generation does not check if the castling path is clear of
         // enemy attacks, it is delayed at a later time: now!
         if move_type == MoveTypes::CASTLING {
-            return false;
-            // TODO: Handle castling
-            // let between_bb = self.bitboards.between_bb[from][to];
+            let between_bb = self.bitboards.between_bb[from][to];
 
-            // if between_bb & self.attacks_bb[them] != EMPTY || between_bb & self.by_color_bb[Sides::BOTH] != EMPTY {
-            //     return false;
-            // }
+            if between_bb & self.attacks_bb[them] != EMPTY || between_bb & self.by_color_bb[Sides::BOTH] != EMPTY {
+                return false;
+            }
 
-            // return true;
+            return true;
         }
 
         // If the moving piece is a king, check whether the destination square is
@@ -433,13 +464,16 @@ mod test {
         let mut initial_position = Position::new(Rc::clone(&bitboards));
         let mut position = Position::new(Rc::clone(&bitboards));
 
-        position.set(String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
-        initial_position.set(String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+        let fen: &str = "rn1qkb1r/ppp1pppp/3p1n2/8/6b1/5NP1/PPPPPPBP/RNBQK2R w KQkq - 4 4";
+        position.set(fen.to_string());
+        initial_position.set(fen.to_string());
 
         for mv in movegen.legal_moves(&position) {
-            println!("{:?}", mv);
             position.do_move(mv);
             position.undo_move(mv);
+
+            println!("{:?}", mv);
+            println!("{}", Bitboards::pretty(position.by_color_bb[Sides::WHITE]));
 
             assert_eq!(position.board, initial_position.board);
             assert_eq!(position.game_ply, initial_position.game_ply);

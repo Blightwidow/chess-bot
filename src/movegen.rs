@@ -112,7 +112,8 @@ impl Movegen {
             }
         }
 
-        let mut attackers_bb: Bitboard = pawns_on_rank_7;
+        // Pawns on rank 7 are already handled above
+        let mut attackers_bb: Bitboard = pawns_outside_rank_7;
 
         while attackers_bb != EMPTY {
             let from: Square = bits::pop(&mut attackers_bb);
