@@ -24,8 +24,8 @@ impl Bitboards {
             king: [EMPTY; NrOf::SQUARES],
             knight: [EMPTY; NrOf::SQUARES],
             pawn_attacks: [[EMPTY; NrOf::SQUARES]; NrOf::SIDES],
-            rook: Vec::new(),
-            bishop: Vec::new(),
+            rook: vec![EMPTY; 0x19000],
+            bishop: vec![EMPTY; 0x1480],
             rook_magics: [Magic::default(); NrOf::SQUARES],
             bishop_magics: [Magic::default(); NrOf::SQUARES],
             line_bb: [[EMPTY; NrOf::SQUARES]; NrOf::SQUARES],
@@ -103,10 +103,15 @@ impl Bitboards {
             let mut s: isize = square as isize;
             let mut dest_bb = Bitboards::safe_destination(s as usize, direction);
 
-            while dest_bb > 0 && occupied & dest_bb == 0 {
+            while dest_bb > 0 {
+                let met = occupied & dest_bb != 0;
                 attack_bb |= dest_bb;
-                dest_bb = Bitboards::safe_destination(s as usize, direction);
                 s += direction;
+                dest_bb = Bitboards::safe_destination(s as usize, direction);
+
+                if met {
+                    break;
+                }
             }
         }
 
@@ -124,39 +129,40 @@ impl Bitboards {
         };
     }
 
-    pub fn init_magics(piece: Piece, magics: &mut [Magic; NrOf::SQUARES], table: &mut Vec<Bitboard>) {
-        let mut offset: u64 = 0;
+    pub fn init_magics(piece_type: Piece, magics: &mut [Magic; NrOf::SQUARES], table: &mut Vec<Bitboard>) {
+        assert!(
+            piece_type == PieceType::ROOK || piece_type == PieceType::BISHOP,
+            "Invalid piece."
+        );
 
-        let magic_numbers = match piece {
-            PieceType::ROOK => ROOK_MAGIC_NUMBERS,
-            PieceType::BISHOP => BISHOP_MAGIC_NUMBERS,
-            _ => panic!("Invalid piece."),
-        };
+        let mut offset: u64 = 0;
 
         for square in RangeOf::SQUARES {
             // Board edges are not considered in the relevant occupancies
             let edges: Bitboard =
                 ((RANK_1BB | RANK_8BB) & !rank_bb(square)) | ((FILE_ABB | FILE_HBB) & !file_bb(square));
-            let mask = Bitboards::sliding_attack(piece, square, EMPTY) & !edges;
-            let mut occupied: Bitboard = EMPTY;
+            let mask = Bitboards::sliding_attack(piece_type, square, EMPTY) & !edges;
+            let mut occupancy: [Bitboard; 4096] = [EMPTY; 4096];
+            let mut reference: [Bitboard; 4096] = [EMPTY; 4096];
+
             let magic = &mut magics[square as usize];
             magic.mask = mask;
-            magic.number = magic_numbers[square as usize];
             magic.shift = 64 - mask.count_ones() as u8;
             magic.offset = offset;
+            magic.number = match piece_type {
+                PieceType::ROOK => ROOK_MAGIC_NUMBERS[square as usize],
+                PieceType::BISHOP => BISHOP_MAGIC_NUMBERS[square as usize],
+                _ => panic!("Invalid piece."),
+            };
 
+            // Let's init the occupancy and reference arrays
+            let mut occupied: Bitboard = EMPTY;
+            let mut count: usize = 0;
             loop {
-                let index = magic.get_index(occupied);
+                occupancy[count] = occupied;
+                reference[count] = Bitboards::sliding_attack(piece_type, square, occupied);
 
-                if table.len() <= index {
-                    table.resize(index + 1, EMPTY);
-                }
-
-                if table[index] == EMPTY {
-                    offset += 1;
-                    table[index] = Bitboards::sliding_attack(piece, square, occupied);
-                }
-
+                count += 1;
                 occupied = occupied.wrapping_sub(mask) & mask;
 
                 // If occupancy is 0, we have reached the end of the permutations.
@@ -164,6 +170,25 @@ impl Bitboards {
                     break;
                 }
             }
+
+            let end = offset + (count - 1) as u64;
+            for i in 0..count {
+                let index = magic.get_index(occupancy[i]);
+                // If the table at this index is empty...
+                if table[index] == EMPTY {
+                    // Check if we're within the expected range
+                    let fail_low = index < offset as usize;
+                    let fail_high = index > end as usize;
+                    assert!(!fail_low && !fail_high, "Indexing error.");
+
+                    // We found a working magic.
+                    table[index] = reference[i];
+                } else {
+                    panic!("Invalid magic number.");
+                }
+            }
+
+            offset += count as u64;
         }
     }
 

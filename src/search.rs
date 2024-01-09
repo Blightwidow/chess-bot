@@ -8,8 +8,8 @@ use crate::{
 use self::defs::*;
 
 pub struct Search {
-    position: Position,
-    movegen: Movegen,
+    pub position: Position,
+    pub movegen: Movegen,
 }
 
 impl Search {

@@ -97,13 +97,8 @@ impl Movegen {
 
             while attackers_bb != EMPTY {
                 let from: Square = bits::pop(&mut attackers_bb);
-                let state = position.states.last().unwrap();
-                let en_passant_bb: Bitboard = match state.en_passant_square {
-                    NONE_SQUARE => EMPTY,
-                    square => square_bb(square),
-                };
-                let mut attack_bb: Bitboard = self.bitboards.attack_bb(PieceType::PAWN, from, EMPTY)
-                    & (position.by_color_bb[them] | en_passant_bb);
+                let mut attack_bb: Bitboard =
+                    self.bitboards.attack_bb(PieceType::PAWN, from, EMPTY) & (position.by_color_bb[them]);
 
                 while attack_bb != EMPTY {
                     let to: Square = bits::pop(&mut attack_bb);
@@ -147,10 +142,8 @@ impl Movegen {
 
         while bitboard != EMPTY {
             let from = bits::pop(&mut bitboard);
-            let mut attack_bb = self
-                .bitboards
-                .attack_bb(piece, from, position.by_color_bb[Sides::BOTH])
-                & !position.by_color_bb[us];
+            let mut attack_bb =
+                self.bitboards.attack_bb(piece, from, position.by_color_bb[Sides::BOTH]) & !position.by_color_bb[us];
 
             while attack_bb != EMPTY {
                 let to = bits::pop(&mut attack_bb);

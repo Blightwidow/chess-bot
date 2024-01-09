@@ -25,6 +25,7 @@ impl UCI {
     fn go(search: &mut Search) {
         let token = std::env::args().nth(2).unwrap();
         let mut limits = SearchLimits::new();
+        // limits.fen = "rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq - 0 1".to_string();
 
         match token.as_str() {
             "perft" => {

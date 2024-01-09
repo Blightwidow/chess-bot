@@ -268,7 +268,7 @@ impl Position {
         assert!(defending_side == Sides::WHITE || defending_side == Sides::BLACK);
 
         let mut checkers: Vec<Square> = Vec::new();
-        let mut attackers_bb: Bitboard = self.attacks_bb[defending_side ^ 1];
+        let mut attackers_bb: Bitboard = self.by_color_bb[defending_side ^ 1];
         let kind_bb: Bitboard = self.by_type_bb[defending_side][PieceType::KING];
 
         while attackers_bb != EMPTY {
@@ -287,7 +287,7 @@ impl Position {
 
     fn attacks_bb(&self, side: Side) -> Bitboard {
         let mut attacks_bb: Bitboard = EMPTY;
-        let mut opponents: Bitboard = self.by_color_bb[side]; // FIXME: Take out pinned pieces
+        let mut opponents: Bitboard = self.by_color_bb[side] & !self.pinned_bb[side];
 
         while opponents != EMPTY {
             let square: Square = bits::pop(&mut opponents);
