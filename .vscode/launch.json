@@ -11,7 +11,8 @@
             "program": "${workspaceRoot}/target/debug/chessbot",
             "args": ["go", "perft", "2"],
             "cwd": "${workspaceRoot}/target/debug/",
-            "sourceLanguages": ["rust"]
+            "sourceLanguages": ["rust"],
+            "preLaunchTask": "build"
         }
     ]
 }
