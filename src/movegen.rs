@@ -1,5 +1,7 @@
 pub mod defs;
 
+use std::rc::Rc;
+
 use crate::{
     bitboards::{defs::*, Bitboards},
     defs::*,
@@ -10,11 +12,11 @@ use crate::{
 use self::defs::*;
 
 pub struct Movegen {
-    bitboards: Bitboards,
+    bitboards: Rc<Bitboards>,
 }
 
 impl Movegen {
-    pub fn new(bitboards: Bitboards) -> Self {
+    pub fn new(bitboards: Rc<Bitboards>) -> Self {
         Self { bitboards }
     }
 

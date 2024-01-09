@@ -6,18 +6,16 @@ mod position;
 mod search;
 mod uci;
 
+use std::rc::Rc;
+
 use crate::{bitboards::Bitboards, movegen::Movegen, position::Position, search::Search, uci::UCI};
 
 fn main() {
     println!("Oxide v0.1.0 by Theo Dammaretz");
 
-    // FIXME: I feel like using 2 bitboards is a bit overkill
-    //        but I could not find a way to share it between
-    //        the movegen and the position without the compiler
-    //        complaining about multiple mutable borrows and
-    //        lifecycle issues. Maybe using Rc<T> would work?
-    let movegen = Movegen::new(Bitboards::new());
-    let position = Position::new(Bitboards::new());
+    let bitboards = Rc::new(Bitboards::new());
+    let movegen = Movegen::new(Rc::clone(&bitboards));
+    let position = Position::new(Rc::clone(&bitboards));
     let mut search = Search::new(position, movegen);
     // let eval = eval::Eval::new();
 

@@ -1,5 +1,7 @@
 pub mod defs;
 
+use std::rc::Rc;
+
 use crate::bitboards::defs::EMPTY;
 use crate::bitboards::Bitboards;
 use crate::defs::*;
@@ -17,12 +19,12 @@ pub struct Position {
     pub game_ply: usize,
     pub side_to_move: Side,
     pub states: Vec<StateInfo>,
-    bitboards: Bitboards,
+    bitboards: Rc<Bitboards>,
     castling_masks: [CastlingRight; NrOf::SQUARES],
 }
 
 impl Position {
-    pub fn new(bitboards: Bitboards) -> Self {
+    pub fn new(bitboards: Rc<Bitboards>) -> Self {
         return Self {
             bitboards: bitboards,
             attacks_bb: [EMPTY; NrOf::SIDES],

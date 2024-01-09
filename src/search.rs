@@ -77,13 +77,16 @@ impl Search {
 
 #[cfg(test)]
 mod test {
+    use std::rc::Rc;
+
     use super::*;
     use crate::bitboards::Bitboards;
 
     #[test]
     fn test_perft_startpos() {
-        let movegen = Movegen::new(Bitboards::new());
-        let position = Position::new(Bitboards::new());
+        let bitboards = Rc::new(Bitboards::new());
+        let movegen = Movegen::new(Rc::clone(&bitboards));
+        let position = Position::new(Rc::clone(&bitboards));
         let mut search = Search::new(position, movegen);
 
         assert_eq!(search.perft(1), 20);
@@ -95,8 +98,9 @@ mod test {
 
     #[test]
     fn test_perft_debug() {
-        let movegen = Movegen::new(Bitboards::new());
-        let position = Position::new(Bitboards::new());
+        let bitboards = Rc::new(Bitboards::new());
+        let movegen = Movegen::new(Rc::clone(&bitboards));
+        let position = Position::new(Rc::clone(&bitboards));
         let mut search = Search::new(position, movegen);
 
         assert_eq!(search.perft(1), 20);
