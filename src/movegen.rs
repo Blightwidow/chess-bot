@@ -32,7 +32,7 @@ impl Movegen {
     fn generate(&self, position: &Position, us: Side) -> Vec<Move> {
         let mut movelist: Vec<Move> = Vec::new();
 
-        if position.checkers().len() <= 1 {
+        if position.checkers(us).len() <= 1 {
             self.generate_pawns(position, &mut movelist, us);
             self.generate_piece(position, &mut movelist, PieceType::KNIGHT, us);
             self.generate_piece(position, &mut movelist, PieceType::BISHOP, us);
@@ -65,9 +65,8 @@ impl Movegen {
             _ => panic!("Invalid side"),
         };
         let empty_squares: Bitboard = !position.by_color_bb[Sides::BOTH];
-        let pawns_on_rank_7: Bitboard = position.by_type_bb[PieceType::PAWN] & rank_7bb & position.by_color_bb[us];
-        let pawns_outside_rank_7: Bitboard =
-            position.by_type_bb[PieceType::PAWN] & !rank_7bb & position.by_color_bb[us];
+        let pawns_on_rank_7: Bitboard = position.by_type_bb[us][PieceType::PAWN] & rank_7bb;
+        let pawns_outside_rank_7: Bitboard = position.by_type_bb[us][PieceType::PAWN] & !rank_7bb;
 
         let mut single_bb: Bitboard = shift(pawns_outside_rank_7, up) & empty_squares;
         // We generate double pawn pushes from the first push to take blockers on the 3rd rank into account
@@ -144,13 +143,13 @@ impl Movegen {
         let piece_type = type_of_piece(piece);
         assert!(piece_type != PieceType::PAWN, "Invalid piece");
 
-        let mut bitboard: Bitboard = position.by_type_bb[piece_type] & position.by_color_bb[us];
+        let mut bitboard: Bitboard = position.by_type_bb[us][piece_type];
 
         while bitboard != EMPTY {
             let from = bits::pop(&mut bitboard);
             let mut attack_bb = self
                 .bitboards
-                .attack_bb(piece_type, from, position.by_color_bb[Sides::BOTH])
+                .attack_bb(piece, from, position.by_color_bb[Sides::BOTH])
                 & !position.by_color_bb[us];
 
             while attack_bb != EMPTY {

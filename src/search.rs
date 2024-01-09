@@ -44,7 +44,7 @@ impl Search {
             } else {
                 self.position.do_move(*mv);
                 count = match leaf {
-                    true => moves.len(),
+                    true => self.movegen.legal_moves(&self.position).len(),
                     false => self.perft_recursive(depth - 1),
                 };
                 nodes += count;
@@ -59,17 +59,15 @@ impl Search {
 
     fn perft_recursive(&mut self, depth: usize) -> usize {
         let mut nodes: usize = 0;
-        let mut count: usize = 0;
         let leaf: bool = depth == 2;
         let moves: Vec<Move> = self.movegen.legal_moves(&self.position);
 
         for mv in moves.iter() {
             self.position.do_move(*mv);
-            count = match leaf {
-                true => moves.len(),
+            nodes += match leaf {
+                true => self.movegen.legal_moves(&self.position).len(),
                 false => self.perft_recursive(depth - 1),
             };
-            nodes += count;
             self.position.undo_move(*mv);
         }
 

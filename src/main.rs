@@ -15,7 +15,7 @@ fn main() {
     //        but I could not find a way to share it between
     //        the movegen and the position without the compiler
     //        complaining about multiple mutable borrows and
-    //        lifecycle issues.
+    //        lifecycle issues. Maybe using Rc<T> would work?
     let movegen = Movegen::new(Bitboards::new());
     let position = Position::new(Bitboards::new());
     let mut search = Search::new(position, movegen);

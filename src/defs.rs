@@ -52,9 +52,10 @@ impl NrOf {
 
 pub struct RangeOf;
 impl RangeOf {
-    pub const RANKS: RangeInclusive<usize> = (0 as usize)..=(7 as usize);
-    pub const FILES: RangeInclusive<usize> = (0 as usize)..=(7 as usize);
+    pub const RANKS: RangeInclusive<usize> = 0..=7;
+    pub const FILES: RangeInclusive<usize> = 0..=7;
     pub const SQUARES: RangeInclusive<Square> = 0..=63;
+    pub const SIDES: RangeInclusive<Side> = 0..=2;
 }
 
 pub type Direction = isize;

@@ -74,7 +74,7 @@ impl Bitboards {
                 self.bishop[self.bishop_magics[square].get_index(occupied)]
                     | self.rook[self.rook_magics[square].get_index(occupied)]
             }
-            _ => panic!("Invalid piece."),
+            piece => panic!("Invalid piece {}.", piece),
         };
     }
 
