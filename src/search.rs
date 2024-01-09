@@ -32,8 +32,8 @@ impl Search {
     }
 
     fn perft(&mut self, depth: usize) -> usize {
+        let mut count: usize;
         let mut nodes: usize = 0;
-        let mut count: usize = 0;
         let leaf: bool = depth == 2;
         let moves: Vec<Move> = self.movegen.legal_moves(&self.position);
 

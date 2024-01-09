@@ -16,22 +16,13 @@ impl Magic {
 }
 
 pub const EMPTY: Bitboard = 0;
-pub const FULL: Bitboard = 0xffffffffffffffff;
 
 pub const FILE_ABB: Bitboard = 0x0101010101010101;
-pub const FILE_BBB: Bitboard = FILE_ABB << 1;
-pub const FILE_CBB: Bitboard = FILE_ABB << 2;
-pub const FILE_DBB: Bitboard = FILE_ABB << 3;
-pub const FILE_EBB: Bitboard = FILE_ABB << 4;
-pub const FILE_FBB: Bitboard = FILE_ABB << 5;
-pub const FILE_GBB: Bitboard = FILE_ABB << 6;
 pub const FILE_HBB: Bitboard = FILE_ABB << 7;
 
 pub const RANK_1BB: Bitboard = 0xff;
 pub const RANK_2BB: Bitboard = RANK_1BB << (8 * 1);
 pub const RANK_3BB: Bitboard = RANK_1BB << (8 * 2);
-pub const RANK_4BB: Bitboard = RANK_1BB << (8 * 3);
-pub const RANK_5BB: Bitboard = RANK_1BB << (8 * 4);
 pub const RANK_6BB: Bitboard = RANK_1BB << (8 * 5);
 pub const RANK_7BB: Bitboard = RANK_1BB << (8 * 6);
 pub const RANK_8BB: Bitboard = RANK_1BB << (8 * 7);
@@ -43,9 +34,6 @@ pub fn file_bb(square: Square) -> Bitboard {
 pub fn rank_bb(square: Square) -> Bitboard {
     return RANK_1BB << (square / 8) * 8;
 }
-
-pub const ROOK_TABLE_SIZE: usize = 102400;
-pub const BISHOP_TABLE_SIZE: usize = 5248;
 
 #[rustfmt::skip]
 pub const ROOK_MAGIC_NUMBERS: [Bitboard; NrOf::SQUARES] = [

@@ -171,6 +171,7 @@ impl Bitboards {
         return self.line_bb[a][b] & square_bb(c) != EMPTY;
     }
 
+    #[allow(dead_code)]
     pub fn pretty(bitboard: Bitboard) -> String {
         let mut output = "  A   B   C   D   E   F   G   H  \n+---+---+---+---+---+---+---+---+\n".to_owned();
 

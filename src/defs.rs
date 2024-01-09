@@ -8,7 +8,7 @@ pub type Square = usize;
 pub const NONE_SQUARE: Square = 64;
 
 pub fn is_ok(sq: Square) -> bool {
-    return 0 <= sq && sq < 64;
+    return sq < 64;
 }
 
 pub struct Sides;
@@ -46,8 +46,6 @@ impl NrOf {
     pub const PIECE_TYPES: usize = 7;
     pub const SIDES: usize = 3;
     pub const SQUARES: usize = 64;
-    pub const FILES: usize = 8;
-    pub const RANKS: usize = 8;
 }
 
 pub struct RangeOf;
@@ -55,7 +53,6 @@ impl RangeOf {
     pub const RANKS: RangeInclusive<usize> = 0..=7;
     pub const FILES: RangeInclusive<usize> = 0..=7;
     pub const SQUARES: RangeInclusive<Square> = 0..=63;
-    pub const SIDES: RangeInclusive<Side> = 0..=2;
 }
 
 pub type Direction = isize;

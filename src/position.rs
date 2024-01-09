@@ -1,7 +1,5 @@
 pub mod defs;
 
-use std::collections::btree_map::Range;
-
 use crate::bitboards::defs::EMPTY;
 use crate::bitboards::Bitboards;
 use crate::defs::*;
@@ -21,10 +19,6 @@ pub struct Position {
     pub states: Vec<StateInfo>,
     bitboards: Bitboards,
     castling_masks: [CastlingRight; NrOf::SQUARES],
-    // int        pieceCount[PIECE_NB];
-    // int        castlingRightsMask[SQUARE_NB];
-    // Square     castlingRookSquare[CASTLING_RIGHT_NB];
-    // Bitboard   castlingPath[CASTLING_RIGHT_NB];
 }
 
 impl Position {
@@ -154,7 +148,7 @@ impl Position {
 
         self.move_piece(piece, from, to);
 
-        for side in RangeOf::SIDES {
+        for side in [us, them] {
             self.attacks_bb[side] = self.attacks_bb(side);
             self.pinned_bb[side] = self.pinned_bb(side);
         }
@@ -198,7 +192,7 @@ impl Position {
             self.put_piece(piece, to);
         }
 
-        for side in [us, them, Sides::BOTH] {
+        for side in [us, them] {
             self.attacks_bb[side] = self.attacks_bb(side);
             self.pinned_bb[side] = self.pinned_bb(side);
         }
@@ -271,7 +265,6 @@ impl Position {
     }
 
     pub fn checkers(&self, defending_side: Side) -> Vec<Square> {
-        return vec![];
         assert!(defending_side == Sides::WHITE || defending_side == Sides::BLACK);
 
         let mut checkers: Vec<Square> = Vec::new();
@@ -308,13 +301,11 @@ impl Position {
     }
 
     fn pinned_bb(&self, side: Side) -> Bitboard {
-        let opponent = match side {
-            Sides::BOTH => Sides::BOTH,
-            _ => side ^ 1,
-        };
+        assert!(side == Sides::WHITE || side == Sides::BLACK);
+
         let mut pinned_bb: Bitboard = EMPTY;
         let king: Square = bits::lsb(self.by_type_bb[side][PieceType::KING]);
-        let mut attackers_bb: Bitboard = self.by_color_bb[opponent];
+        let mut attackers_bb: Bitboard = self.by_color_bb[side ^ 1];
 
         while attackers_bb != EMPTY {
             let square: Square = bits::pop(&mut attackers_bb);
@@ -400,6 +391,8 @@ impl Position {
         masks[square_of(7, 0)] = CastlingRights::WHITE_KINGSIDE;
         masks[square_of(0, 7)] = CastlingRights::BLACK_QUEENSIDE;
         masks[square_of(7, 7)] = CastlingRights::BLACK_KINGSIDE;
+        masks[square_of(4, 0)] = CastlingRights::WHITE;
+        masks[square_of(4, 7)] = CastlingRights::BLACK;
 
         return masks;
     }

@@ -22,7 +22,6 @@ impl CastlingRights {
     pub const BLACK_QUEENSIDE: CastlingRight = 1 << 3;
     pub const WHITE: CastlingRight = CastlingRights::WHITE_KINGSIDE | CastlingRights::WHITE_QUEENSIDE;
     pub const BLACK: CastlingRight = CastlingRights::BLACK_KINGSIDE | CastlingRights::BLACK_QUEENSIDE;
-    pub const ALL: CastlingRight = CastlingRights::WHITE | CastlingRights::BLACK;
 }
 
 pub fn pawn_push(side: Side) -> Direction {
@@ -65,10 +64,6 @@ impl Move {
         return (self.data & 0x3F) as Square;
     }
 
-    pub fn from_to(&self) -> u16 {
-        return self.data & 0xFFF;
-    }
-
     pub fn type_of(&self) -> MoveType {
         return self.data & (3 << 14);
     }
@@ -82,10 +77,6 @@ impl Move {
 
     pub fn is_ok(&self) -> bool {
         return Self::none().data != self.data && Self::null().data != self.data;
-    }
-
-    pub fn bool(&self) -> bool {
-        return self.data != 0;
     }
 
     pub fn null() -> Self {
