@@ -44,7 +44,7 @@ impl Movegen {
 
         self.generate_piece(position, &mut movelist, PieceType::KING, us);
 
-        // TODO: Add castling
+        self.generate_castling(position, &mut movelist, us);
 
         return movelist;
     }
@@ -151,6 +151,30 @@ impl Movegen {
                 let to = bits::pop(&mut attack_bb);
                 movelist.push(Move::with_from_to(from, to));
             }
+        }
+    }
+
+    fn generate_castling(&self, position: &Position, movelist: &mut Vec<Move>, us: Side) {
+        let king_square = bits::lsb(position.by_type_bb[us][PieceType::KING]);
+        let mut rights = position.castling_masks[king_square] & position.states.last().unwrap().castling_rights;
+
+        while rights != 0 {
+            let right = 1 << rights.trailing_zeros() as CastlingRight;
+            let to: usize = match right {
+                CastlingRights::WHITE_KINGSIDE => king_square + 3,
+                CastlingRights::WHITE_QUEENSIDE => king_square - 4,
+                CastlingRights::BLACK_KINGSIDE => king_square + 3,
+                CastlingRights::BLACK_QUEENSIDE => king_square - 4,
+                _ => panic!("Invalid castling right"),
+            };
+
+            assert!(is_ok(to));
+
+            // println!("{:?}", Move::make(king_square, to, PieceType::NONE, MoveTypes::CASTLING));
+
+            movelist.push(Move::make(king_square, to, PieceType::NONE, MoveTypes::CASTLING));
+
+            rights ^= right;
         }
     }
 }

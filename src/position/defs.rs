@@ -1,6 +1,6 @@
 use crate::{defs::*, movegen::defs::CastlingRights};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct StateInfo {
     // Copied when making a move
     pub en_passant_square: Square,

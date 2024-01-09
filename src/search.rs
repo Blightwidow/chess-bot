@@ -89,6 +89,8 @@ mod test {
         let position = Position::new(Rc::clone(&bitboards));
         let mut search = Search::new(position, movegen);
 
+        search.position.set(FEN_START_POSITION.to_string());
+
         assert_eq!(search.perft(1), 20);
         assert_eq!(search.perft(2), 400);
         assert_eq!(search.perft(3), 8902);
@@ -103,10 +105,14 @@ mod test {
         let position = Position::new(Rc::clone(&bitboards));
         let mut search = Search::new(position, movegen);
 
-        assert_eq!(search.perft(1), 20);
-        assert_eq!(search.perft(2), 400);
-        assert_eq!(search.perft(3), 8902);
-        assert_eq!(search.perft(4), 197281);
-        assert_eq!(search.perft(5), 4865609);
+        search
+            .position
+            .set("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8".to_string());
+
+        assert_eq!(search.perft(1), 44);
+        assert_eq!(search.perft(2), 1486);
+        assert_eq!(search.perft(3), 62379);
+        assert_eq!(search.perft(4), 2103487);
+        assert_eq!(search.perft(5), 89941194);
     }
 }

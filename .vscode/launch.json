@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "perft",
             "program": "${workspaceRoot}/target/debug/chessbot",
-            "args": ["go", "perft", "2"],
+            "args": ["go", "perft", "1"],
             "cwd": "${workspaceRoot}/target/debug/",
             "sourceLanguages": ["rust"],
             "preLaunchTask": "build"

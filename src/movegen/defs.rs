@@ -7,9 +7,9 @@ pub struct MoveTypes {}
 
 impl MoveTypes {
     pub const NORMAL: u16 = 0;
-    pub const PROMOTION: u16 = 1 << 14;
-    pub const EN_PASSANT: u16 = 2 << 14;
-    pub const CASTLING: u16 = 3 << 14;
+    pub const PROMOTION: u16 = 0b01 << 14;
+    pub const EN_PASSANT: u16 = 0b10 << 14;
+    pub const CASTLING: u16 = 0b11 << 14;
 }
 
 pub type CastlingRight = usize;
@@ -57,15 +57,15 @@ impl Move {
     }
 
     pub fn from_sq(&self) -> Square {
-        return (self.data >> 6) as Square;
+        return (self.data >> 6) as Square & 0b111111;
     }
 
     pub fn to_sq(&self) -> Square {
-        return (self.data & 0x3F) as Square;
+        return (self.data & 0b111111) as Square;
     }
 
     pub fn type_of(&self) -> MoveType {
-        return self.data & (3 << 14);
+        return self.data & 0xC000;
     }
 
     pub fn promotion_type(&self) -> Piece {
@@ -90,6 +90,18 @@ impl Move {
 
 impl fmt::Debug for Move {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.type_of() == MoveTypes::CASTLING {
+            let castlint_string = match self.to_sq() {
+                0 => "O-O-O",
+                7 => "O-O",
+                56 => "o-o-o",
+                63 => "o-o",
+                _ => panic!("Invalid castling move"),
+            };
+
+            return write!(f, "{}", castlint_string);
+        }
+
         let promotion_string = match self.promotion_type() {
             PieceType::KNIGHT => "=K",
             PieceType::BISHOP => "=B",
@@ -98,6 +110,7 @@ impl fmt::Debug for Move {
             PieceType::NONE => "",
             _ => panic!("Invalid promotion type"),
         };
+
         return write!(
             f,
             "{}{}{}",

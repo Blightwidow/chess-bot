@@ -13,6 +13,7 @@ pub struct Bitboards {
     rook_magics: [Magic; NrOf::SQUARES],
     bishop_magics: [Magic; NrOf::SQUARES],
     pub line_bb: [[Bitboard; NrOf::SQUARES]; NrOf::SQUARES],
+    pub between_bb: [[Bitboard; NrOf::SQUARES]; NrOf::SQUARES],
 }
 
 // extern Bitboard BetweenBB[SQUARE_NB][SQUARE_NB];
@@ -29,6 +30,7 @@ impl Bitboards {
             rook_magics: [Magic::default(); NrOf::SQUARES],
             bishop_magics: [Magic::default(); NrOf::SQUARES],
             line_bb: [[EMPTY; NrOf::SQUARES]; NrOf::SQUARES],
+            between_bb: [[EMPTY; NrOf::SQUARES]; NrOf::SQUARES],
         };
         Bitboards::init_magics(PieceType::ROOK, &mut mg.rook_magics, &mut mg.rook);
         Bitboards::init_magics(PieceType::BISHOP, &mut mg.bishop_magics, &mut mg.bishop);
@@ -51,11 +53,22 @@ impl Bitboards {
             }
 
             for piece in [PieceType::ROOK, PieceType::BISHOP] {
-                for too in RangeOf::SQUARES {
-                    mg.line_bb[from][too] = Bitboards::sliding_attack(piece, from, EMPTY)
-                        & Bitboards::sliding_attack(piece, too, EMPTY)
+                for to in RangeOf::SQUARES {
+                    if Bitboards::sliding_attack(piece, from, EMPTY) & square_bb(to) == EMPTY  {
+                        continue;
+                    }
+
+                    mg.line_bb[from][to] = (Bitboards::sliding_attack(piece, from, EMPTY)
+                        & Bitboards::sliding_attack(piece, to, EMPTY))
                         | square_bb(from)
-                        | square_bb(too);
+                        | square_bb(to);
+
+                    if from == to {
+                        continue;
+                    }
+
+                    mg.between_bb[from][to] = Bitboards::sliding_attack(piece, from, square_bb(to))
+                        & Bitboards::sliding_attack(piece, to, square_bb(from));
                 }
             }
         }
