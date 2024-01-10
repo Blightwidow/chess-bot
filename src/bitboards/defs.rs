@@ -16,6 +16,7 @@ impl Magic {
 }
 
 pub const EMPTY: Bitboard = 0;
+pub const FULL: Bitboard = 0xffffffffffffffff;
 
 pub const FILE_ABB: Bitboard = 0x0101010101010101;
 pub const FILE_HBB: Bitboard = FILE_ABB << 7;

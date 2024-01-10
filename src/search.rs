@@ -13,16 +13,14 @@ pub struct Search {
 }
 
 impl Search {
-    pub fn new(position: Position, movegen: Movegen) -> Search {
-        Self {
-            position: position,
-            movegen: movegen,
-        }
+    pub fn new(position: Position, movegen: Movegen) -> Self {
+        let mut search = Self { position, movegen };
+        search.position.set(FEN_START_POSITION.to_string());
+
+        return search;
     }
 
     pub fn run(&mut self, limits: SearchLimits) {
-        self.position.set(limits.fen);
-
         if limits.perft > 0 {
             let count = self.perft(limits.perft);
             println!("\nNodes searched: {}\n", count);

@@ -1,4 +1,7 @@
-use crate::search::{defs::SearchLimits, Search};
+use crate::search::{
+    defs::{SearchLimits, FEN_START_POSITION},
+    Search,
+};
 
 pub struct UCI {}
 
@@ -6,33 +9,69 @@ impl UCI {
     pub fn main_loop(search: &mut Search) {
         // Handle stream
 
-        let mut args = std::env::args();
-        // let stream =
-        let token = args.nth(1);
+        let argc = std::env::args().len();
+        let mut buffer: String = std::env::args().skip(1).collect::<Vec<String>>().join(" ");
 
-        if token.is_none() {
-            // UCI::wait_for_command();
-        } else {
-            let cmd = token.unwrap();
-            match cmd.as_str() {
-                "go" => UCI::go(search),
-                "help" => UCI::help(),
-                _ => println!("Unknown command: {}. Type help for more information", cmd),
+        loop {
+            if argc == 1 {
+                buffer.clear();
+                let read_result = std::io::stdin().read_line(&mut buffer);
+
+                if read_result.is_err() {
+                    buffer = "quit".to_string();
+                }
+            }
+
+            let cmd = buffer.clone();
+            let args: Vec<&str> = cmd.trim().split(" ").collect();
+            let token = args[0];
+            buffer = args[1..].join(" ").to_string();
+
+            if token == "uci" {
+                println!("id name Oxide");
+                println!("id author Theo Dammaretz");
+                println!("uciok");
+            } else if token == "position" {
+                UCI::position(search, &buffer);
+            } else if token == "go" {
+                UCI::go(search, &buffer);
+            } else if token == "help" {
+                UCI::help();
+            } else if token == "quit" && argc == 1 {
+                break;
+            } else {
+                println!("Unknown command: {}. Type help for more information", token);
             }
         }
     }
 
-    fn go(search: &mut Search) {
-        let token = std::env::args().nth(2).unwrap();
-        let mut limits = SearchLimits::new();
-        limits.fen = "rnbqkbnr/p1pppppp/8/1p6/P7/8/1PPPPPPP/RNBQKBNR w KQkq b6 0 2".to_string();
+    fn position(search: &mut Search, cmd: &String) {
+        let token = cmd.split(" ").next().unwrap();
 
-        match token.as_str() {
-            "perft" => {
-                let depth_paramater = std::env::args().nth(3);
-                limits.perft = depth_paramater.unwrap().parse::<usize>().unwrap_or(1);
+        if token == "startpos" {
+            search.position.set(FEN_START_POSITION.to_string());
+        } else if token == "fen" {
+            let fen = cmd.split(" ").skip(1).collect::<Vec<&str>>().join(" ");
+            search.position.set(fen);
+        } else {
+            println!("Unknown position command: {}. Type help for more information", token);
+        }
+    }
+
+    fn go(search: &mut Search, cmd: &String) {
+        let mut limits = SearchLimits::new();
+        let mut args = cmd.split(" ");
+        let mut token = args.next().unwrap_or("");
+
+        while token != "" {
+            match token {
+                "perft" => {
+                    limits.perft = args.next().unwrap_or("1").parse::<usize>().unwrap_or(1);
+                }
+                _ => println!("Unknown command: {}. Type help for more information", token),
             }
-            _ => println!("Unknown command: {}. Type help for more information", token),
+
+            token = args.next().unwrap_or("");
         }
 
         let _ = search.run(limits);

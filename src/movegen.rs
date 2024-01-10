@@ -33,23 +33,29 @@ impl Movegen {
 
     fn generate(&self, position: &Position, us: Side) -> Vec<Move> {
         let mut movelist: Vec<Move> = Vec::new();
+        let checkers = position.checkers(us);
+        let king_square = bits::lsb(position.by_type_bb[us][PieceType::KING]);
+        let target_bb: Bitboard = match checkers.len() {
+            1 => self.bitboards.between_bb[king_square][checkers[0]] | square_bb(checkers[0]),
+            _ => FULL,
+        };
 
-        if position.checkers(us).len() <= 1 {
-            self.generate_pawns(position, &mut movelist, us);
-            self.generate_piece(position, &mut movelist, PieceType::KNIGHT, us);
-            self.generate_piece(position, &mut movelist, PieceType::BISHOP, us);
-            self.generate_piece(position, &mut movelist, PieceType::ROOK, us);
-            self.generate_piece(position, &mut movelist, PieceType::QUEEN, us);
+        if checkers.len() <= 1 {
+            self.generate_pawns(position, &mut movelist, us, target_bb);
+            self.generate_piece(position, &mut movelist, PieceType::KNIGHT, us, target_bb);
+            self.generate_piece(position, &mut movelist, PieceType::BISHOP, us, target_bb);
+            self.generate_piece(position, &mut movelist, PieceType::ROOK, us, target_bb);
+            self.generate_piece(position, &mut movelist, PieceType::QUEEN, us, target_bb);
         }
 
-        self.generate_piece(position, &mut movelist, PieceType::KING, us);
+        self.generate_piece(position, &mut movelist, PieceType::KING, us, target_bb);
 
         self.generate_castling(position, &mut movelist, us);
 
         return movelist;
     }
 
-    fn generate_pawns(&self, position: &Position, movelist: &mut Vec<Move>, us: Side) {
+    fn generate_pawns(&self, position: &Position, movelist: &mut Vec<Move>, us: Side, target_bb: Bitboard) {
         let them: Side = us ^ 1;
         let up: Direction = match us {
             Sides::WHITE => Directions::UP,
@@ -69,10 +75,13 @@ impl Movegen {
         let empty_squares: Bitboard = !position.by_color_bb[Sides::BOTH];
         let pawns_on_rank_7: Bitboard = position.by_type_bb[us][PieceType::PAWN] & rank_7bb;
         let pawns_outside_rank_7: Bitboard = position.by_type_bb[us][PieceType::PAWN] & !rank_7bb;
+        let piece = make_piece(us, PieceType::PAWN);
 
         let mut single_bb: Bitboard = shift(pawns_outside_rank_7, up) & empty_squares;
         // We generate double pawn pushes from the first push to take blockers on the 3rd rank into account
-        let mut double_bb: Bitboard = shift(single_bb & rank_3bb, up) & empty_squares;
+        let mut double_bb: Bitboard = shift(single_bb & rank_3bb, up) & empty_squares & target_bb;
+        // Then we filter with the target squares
+        single_bb = single_bb & target_bb;
 
         while single_bb != EMPTY {
             let to: Square = bits::pop(&mut single_bb);
@@ -85,7 +94,7 @@ impl Movegen {
         }
 
         if pawns_on_rank_7 != EMPTY {
-            let mut promotion_bb: Bitboard = shift(pawns_on_rank_7, up) & empty_squares;
+            let mut promotion_bb: Bitboard = shift(pawns_on_rank_7, up) & empty_squares & target_bb;
 
             while promotion_bb != EMPTY {
                 let to: Square = bits::pop(&mut promotion_bb);
@@ -100,7 +109,7 @@ impl Movegen {
             while attackers_bb != EMPTY {
                 let from: Square = bits::pop(&mut attackers_bb);
                 let mut attack_bb: Bitboard =
-                    self.bitboards.attack_bb(PieceType::PAWN, from, EMPTY) & (position.by_color_bb[them]);
+                    self.bitboards.attack_bb(piece, from, EMPTY) & (position.by_color_bb[them]) & target_bb;
 
                 while attack_bb != EMPTY {
                     let to: Square = bits::pop(&mut attack_bb);
@@ -123,7 +132,7 @@ impl Movegen {
                 square => square_bb(square),
             };
             let mut attack_bb: Bitboard =
-                self.bitboards.attack_bb(PieceType::PAWN, from, EMPTY) & (position.by_color_bb[them] | en_passant_bb);
+                self.bitboards.attack_bb(piece, from, EMPTY) & (position.by_color_bb[them] | en_passant_bb) & target_bb;
 
             while attack_bb != EMPTY {
                 let to: Square = bits::pop(&mut attack_bb);
@@ -137,7 +146,14 @@ impl Movegen {
         }
     }
 
-    fn generate_piece(&self, position: &Position, movelist: &mut Vec<Move>, piece: Piece, us: Side) {
+    fn generate_piece(
+        &self,
+        position: &Position,
+        movelist: &mut Vec<Move>,
+        piece: Piece,
+        us: Side,
+        target_bb: Bitboard,
+    ) {
         let piece_type = type_of_piece(piece);
         assert!(piece_type != PieceType::PAWN, "Invalid piece");
 
@@ -146,7 +162,10 @@ impl Movegen {
         while bitboard != EMPTY {
             let from = bits::pop(&mut bitboard);
             let mut attack_bb =
-                self.bitboards.attack_bb(piece, from, position.by_color_bb[Sides::BOTH]) & !position.by_color_bb[us];
+                self.bitboards
+                    .attack_bb(make_piece(us, piece_type), from, position.by_color_bb[Sides::BOTH])
+                    & !position.by_color_bb[us]
+                    & target_bb;
 
             while attack_bb != EMPTY {
                 let to = bits::pop(&mut attack_bb);

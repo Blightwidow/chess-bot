@@ -13,6 +13,16 @@
             "cwd": "${workspaceRoot}/target/debug/",
             "sourceLanguages": ["rust"],
             "preLaunchTask": "build"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "empty",
+            "program": "${workspaceRoot}/target/debug/chessbot",
+            "args": [],
+            "cwd": "${workspaceRoot}/target/debug/",
+            "sourceLanguages": ["rust"],
+            "preLaunchTask": "build"
         }
     ]
 }

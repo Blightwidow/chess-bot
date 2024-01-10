@@ -45,6 +45,8 @@ impl Position {
 
         assert!(fen_parts.len() == 6);
 
+        self.clear();
+
         let mut square: usize = 0;
         for c in fen_parts[0].split('/').rev().collect::<Vec<&str>>().join("").chars() {
             if c.is_digit(10) {
@@ -308,6 +310,17 @@ impl Position {
             self.put_piece(king, king_to);
             self.put_piece(rook, rook_to);
         }
+    }
+
+    fn clear(&mut self) {
+        for square in 0..NrOf::SQUARES {
+            self.remove_piece(self.piece_on(square), square)
+        }
+
+        self.attacks_bb = [EMPTY; NrOf::SIDES];
+        self.pinned_bb = [EMPTY; NrOf::SIDES];
+        self.states = vec![StateInfo::new()];
+        self.castling_masks = Position::castling_masks();
     }
 
     pub fn checkers(&self, defending_side: Side) -> Vec<Square> {
