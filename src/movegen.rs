@@ -48,9 +48,11 @@ impl Movegen {
             self.generate_piece(position, &mut movelist, PieceType::QUEEN, us, target_bb);
         }
 
-        self.generate_piece(position, &mut movelist, PieceType::KING, us, target_bb);
+        self.generate_piece(position, &mut movelist, PieceType::KING, us, FULL);
 
-        self.generate_castling(position, &mut movelist, us);
+        if checkers.len() == 0 {
+            self.generate_castling(position, &mut movelist, us);
+        }
 
         return movelist;
     }
@@ -189,8 +191,6 @@ impl Movegen {
             };
 
             assert!(is_ok(to));
-
-            // println!("{:?}", Move::make(king_square, to, PieceType::NONE, MoveTypes::CASTLING));
 
             movelist.push(Move::make(king_square, to, PieceType::NONE, MoveTypes::CASTLING));
 

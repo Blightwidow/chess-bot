@@ -1,4 +1,5 @@
 pub mod defs;
+mod fen;
 
 use std::rc::Rc;
 
@@ -12,12 +13,10 @@ use self::defs::*;
 
 #[derive(Clone)]
 pub struct Position {
-    pub attacks_bb: [Bitboard; NrOf::SIDES],
     pub by_type_bb: [[Bitboard; NrOf::PIECE_TYPES]; NrOf::SIDES],
     pub by_color_bb: [Bitboard; NrOf::SIDES],
     pub pinned_bb: [Bitboard; NrOf::SIDES],
     pub board: [Piece; NrOf::SQUARES],
-    pub game_ply: usize,
     pub side_to_move: Side,
     pub states: Vec<StateInfo>,
     pub castling_masks: [CastlingRight; NrOf::SQUARES],
@@ -28,87 +27,14 @@ impl Position {
     pub fn new(bitboards: Rc<Bitboards>) -> Self {
         return Self {
             bitboards: bitboards,
-            attacks_bb: [EMPTY; NrOf::SIDES],
             by_type_bb: [[EMPTY; NrOf::PIECE_TYPES]; NrOf::SIDES],
             by_color_bb: [EMPTY; NrOf::SIDES],
             pinned_bb: [EMPTY; NrOf::SIDES],
             board: [PieceType::NONE; NrOf::SQUARES],
-            game_ply: 0,
             side_to_move: Sides::WHITE,
             states: vec![StateInfo::new()],
             castling_masks: Position::castling_masks(),
         };
-    }
-
-    pub fn set(&mut self, fen: String) {
-        let fen_parts: Vec<&str> = fen.split(' ').collect::<Vec<&str>>();
-
-        assert!(fen_parts.len() == 6);
-
-        self.clear();
-
-        let mut square: usize = 0;
-        for c in fen_parts[0].split('/').rev().collect::<Vec<&str>>().join("").chars() {
-            if c.is_digit(10) {
-                square += c.to_digit(10).unwrap() as usize;
-            } else {
-                let piece_type: Piece = match c.to_ascii_lowercase() {
-                    'p' => PieceType::PAWN,
-                    'n' => PieceType::KNIGHT,
-                    'b' => PieceType::BISHOP,
-                    'r' => PieceType::ROOK,
-                    'q' => PieceType::QUEEN,
-                    'k' => PieceType::KING,
-                    _ => panic!("Invalid piece in FEN {}", c),
-                };
-                let side: Side = match c.is_ascii_lowercase() {
-                    true => Sides::BLACK,
-                    false => Sides::WHITE,
-                };
-
-                self.put_piece(make_piece(side, piece_type), square);
-                square += 1;
-            }
-        }
-
-        self.side_to_move = match fen_parts[1].to_ascii_lowercase().as_str() {
-            "w" => Sides::WHITE,
-            "b" => Sides::BLACK,
-            _ => panic!("Invalid side to move in FEN {}", fen_parts[1]),
-        };
-
-        for c in fen_parts[2].chars() {
-            match c {
-                'K' => self.states.last_mut().unwrap().castling_rights |= CastlingRights::WHITE_KINGSIDE,
-                'Q' => self.states.last_mut().unwrap().castling_rights |= CastlingRights::WHITE_QUEENSIDE,
-                'k' => self.states.last_mut().unwrap().castling_rights |= CastlingRights::BLACK_KINGSIDE,
-                'q' => self.states.last_mut().unwrap().castling_rights |= CastlingRights::BLACK_QUEENSIDE,
-                '-' => (),
-                _ => panic!("Invalid castling rights in FEN {}", fen_parts[2]),
-            }
-        }
-
-        if fen_parts[3] != "-" {
-            let file = "abcdefgh"
-                .chars()
-                .into_iter()
-                .position(|c| c == fen_parts[3].chars().nth(0).unwrap())
-                .unwrap();
-            let rank = "12345678"
-                .chars()
-                .into_iter()
-                .position(|c| c == fen_parts[3].chars().nth(1).unwrap())
-                .unwrap();
-
-            self.states.last_mut().unwrap().en_passant_square = square_of(file, rank);
-        }
-
-        // TODO: Parse last two parts of FEN
-
-        for side in [Sides::WHITE, Sides::BLACK] {
-            self.pinned_bb[side] = self.pinned_bb(side);
-            self.attacks_bb[side] = self.attacks_bb(side);
-        }
     }
 
     // This assume that the move is legal
@@ -116,7 +42,6 @@ impl Position {
     pub fn do_move(&mut self, mv: Move) {
         assert!(mv.is_ok());
 
-        self.game_ply += 1; // TODO: Handle 50 move rule
         let us: Side = self.side_to_move;
         let them: Side = self.side_to_move ^ 1;
         let from: Square = mv.from_sq();
@@ -131,45 +56,35 @@ impl Position {
         let mut new_state = *self.states.last().unwrap();
 
         assert!(color_of_piece(piece) == us);
-        assert!(captured == PieceType::NONE || color_of_piece(captured) == them);
         assert!(type_of_piece(captured) != PieceType::KING);
 
         if captured != PieceType::NONE {
+            assert!(color_of_piece(captured) == them);
+
             let captured_square: Square = match move_type {
                 MoveTypes::EN_PASSANT => (to as isize - pawn_push(us)) as usize,
                 _ => to,
             };
 
-            self.by_type_bb[them][type_of_piece(captured)] &= !square_bb(captured_square);
-            self.by_type_bb[Sides::BOTH][type_of_piece(captured)] &= !square_bb(captured_square);
-            self.by_color_bb[color_of_piece(captured)] &= !square_bb(captured_square);
-            self.board[captured_square] = PieceType::NONE;
+            self.remove_piece(captured, captured_square);
         }
 
         if move_type == MoveTypes::PROMOTION {
-            let promoted_piece: Piece = match mv.promotion_type() {
-                PieceType::KNIGHT => make_piece(us, PieceType::KNIGHT),
-                PieceType::BISHOP => make_piece(us, PieceType::BISHOP),
-                PieceType::ROOK => make_piece(us, PieceType::ROOK),
-                PieceType::QUEEN => make_piece(us, PieceType::QUEEN),
-                _ => panic!("Invalid promotion piece"),
-            };
+            assert!(mv.promotion_type() != PieceType::PAWN && mv.promotion_type() != PieceType::KING);
 
-            piece = make_piece(us, promoted_piece);
-        }
-
-        if move_type == MoveTypes::CASTLING {
+            self.remove_piece(piece, from);
+            self.put_piece(make_piece(us, mv.promotion_type()), to);
+        } else if move_type == MoveTypes::CASTLING {
             self.castle(us, from, to, false);
         } else {
             self.move_piece(piece, from, to);
         }
 
-        new_state.castling_rights ^= self.castling_masks[from];
-        new_state.castling_rights ^= self.castling_masks[to];
+        new_state.castling_rights &= !self.castling_masks[from];
+        new_state.castling_rights &= !self.castling_masks[to];
 
         for side in [us, them] {
             self.pinned_bb[side] = self.pinned_bb(side);
-            self.attacks_bb[side] = self.attacks_bb(side);
         }
 
         if type_of_piece(piece) == PieceType::PAWN && distance(from, to) == 2 {
@@ -184,6 +99,10 @@ impl Position {
 
         self.side_to_move = them;
         new_state.captured_piece = captured;
+        new_state.rule50 = match captured == PieceType::NONE {
+            true => new_state.rule50 + 1,
+            false => 0,
+        };
         self.states.push(new_state);
     }
 
@@ -191,7 +110,6 @@ impl Position {
         assert!(mv.is_ok());
 
         self.side_to_move = self.side_to_move ^ 1;
-        self.game_ply -= 1; // TODO: Handle 50 move rule
         let us: Side = self.side_to_move;
         let them: Side = self.side_to_move ^ 1;
         let from: Square = mv.from_sq();
@@ -200,9 +118,9 @@ impl Position {
         let move_type: MoveType = mv.type_of();
         let last_state: StateInfo = self.states.pop().unwrap();
 
-        assert!(self.board[from] == PieceType::NONE || move_type == MoveTypes::CASTLING);
+        assert!(self.board[from] == PieceType::NONE);
+        assert!(color_of_piece(piece) == us || move_type == MoveTypes::CASTLING);
         assert!(type_of_piece(last_state.captured_piece) != PieceType::KING);
-        assert!(color_of_piece(piece) == us);
 
         if move_type == MoveTypes::PROMOTION {
             assert!(type_of_piece(piece) == mv.promotion_type());
@@ -231,7 +149,6 @@ impl Position {
 
         for side in [them, us] {
             self.pinned_bb[side] = self.pinned_bb(side);
-            self.attacks_bb[side] = self.attacks_bb(side);
         }
     }
 
@@ -241,6 +158,7 @@ impl Position {
     }
 
     fn put_piece(&mut self, piece: Piece, square: Square) {
+        assert!(piece < 18);
         let bb: Bitboard = square_bb(square);
         let side = color_of_piece(piece);
 
@@ -252,6 +170,7 @@ impl Position {
     }
 
     fn remove_piece(&mut self, piece: Piece, square: Square) {
+        assert!(piece < 18);
         let bb: Bitboard = square_bb(square);
         let side = color_of_piece(piece);
 
@@ -264,8 +183,10 @@ impl Position {
 
     // This function is only for moving and does not handle captures
     fn move_piece(&mut self, piece: Piece, from: Square, to: Square) {
+        assert!(piece < 18);
         assert!(is_ok(from));
         assert!(is_ok(to));
+
         assert!(self.board[from] == piece);
         assert!(self.board[to] == PieceType::NONE);
 
@@ -275,10 +196,10 @@ impl Position {
 
         self.board[from] = PieceType::NONE;
         self.board[to] = piece;
-        self.by_type_bb[side][type_of_piece(piece)] ^= bb_from ^ bb_to;
-        self.by_type_bb[Sides::BOTH][type_of_piece(piece)] ^= bb_from ^ bb_to;
-        self.by_color_bb[side] ^= bb_from ^ bb_to;
-        self.by_color_bb[Sides::BOTH] ^= bb_from ^ bb_to;
+        self.by_type_bb[side][type_of_piece(piece)] ^= bb_from | bb_to;
+        self.by_type_bb[Sides::BOTH][type_of_piece(piece)] ^= bb_from | bb_to;
+        self.by_color_bb[side] ^= bb_from | bb_to;
+        self.by_color_bb[Sides::BOTH] ^= bb_from | bb_to;
     }
 
     fn castle(&mut self, side: Side, from: Square, to: Square, undo: bool) {
@@ -317,10 +238,10 @@ impl Position {
             self.remove_piece(self.piece_on(square), square)
         }
 
-        self.attacks_bb = [EMPTY; NrOf::SIDES];
         self.pinned_bb = [EMPTY; NrOf::SIDES];
         self.states = vec![StateInfo::new()];
         self.castling_masks = Position::castling_masks();
+        self.states = vec![StateInfo::new()];
     }
 
     pub fn checkers(&self, defending_side: Side) -> Vec<Square> {
@@ -344,16 +265,14 @@ impl Position {
         return checkers;
     }
 
-    fn attacks_bb(&self, side: Side) -> Bitboard {
+    fn attacks_bb(&self, side: Side, occupied: Bitboard) -> Bitboard {
         let mut attacks_bb: Bitboard = EMPTY;
         let mut opponents: Bitboard = self.by_color_bb[side] & !self.pinned_bb[side];
 
         while opponents != EMPTY {
             let square: Square = bits::pop(&mut opponents);
 
-            attacks_bb |= self
-                .bitboards
-                .attack_bb(self.piece_on(square), square, self.by_color_bb[Sides::BOTH]);
+            attacks_bb |= self.bitboards.attack_bb(self.piece_on(square), square, occupied);
         }
 
         return attacks_bb;
@@ -371,7 +290,9 @@ impl Position {
 
         while attackers_bb != EMPTY {
             let square: Square = bits::pop(&mut attackers_bb);
-            let aligned_pieces_bb: Bitboard = self.by_color_bb[Sides::BOTH] & self.bitboards.between_bb[square][king];
+            let aligned_pieces_bb: Bitboard = self.by_color_bb[Sides::BOTH]
+                & self.bitboards.between_bb[square][king]
+                & self.bitboards.attack_bb(self.piece_on(square), square, square_bb(king));
 
             if aligned_pieces_bb.count_ones() == 1 {
                 pinned_bb |= aligned_pieces_bb;
@@ -428,7 +349,9 @@ impl Position {
         if move_type == MoveTypes::CASTLING {
             let between_bb = self.bitboards.between_bb[from][to];
 
-            if between_bb & self.attacks_bb[them] != EMPTY || between_bb & self.by_color_bb[Sides::BOTH] != EMPTY {
+            if between_bb & CASTLING_DESTINATION_BB & self.attacks_bb(them, self.by_color_bb[Sides::BOTH]) != EMPTY
+                || between_bb & self.by_color_bb[Sides::BOTH] != EMPTY
+            {
                 return false;
             }
 
@@ -438,7 +361,7 @@ impl Position {
         // If the moving piece is a king, check whether the destination square is
         // attacked by the opponent.
         if type_of_piece(piece) == PieceType::KING {
-            return self.attacks_bb[them] & square_bb(to) == EMPTY;
+            return self.attacks_bb(them, self.by_color_bb[Sides::BOTH] ^ square_bb(from)) & square_bb(to) == EMPTY;
         }
 
         // A non-king move is legal if and only if it is not pinned or it
@@ -471,13 +394,13 @@ mod test {
     use crate::{bitboards::Bitboards, movegen::Movegen};
 
     #[test]
-    fn test_perft_do_undo() {
+    fn do_undo() {
         let bitboards = Rc::new(Bitboards::new());
         let movegen = Movegen::new(Rc::clone(&bitboards));
         let mut initial_position = Position::new(Rc::clone(&bitboards));
         let mut position = Position::new(Rc::clone(&bitboards));
 
-        let fen: &str = "rn1qkb1r/ppp1pppp/3p1n2/8/6b1/5NP1/PPPPPPBP/RNBQK2R w KQkq - 4 4";
+        let fen: &str = "r3k2r/p1pNqpb1/bn2pnp1/3P4/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQkq - 0 1";
         position.set(fen.to_string());
         initial_position.set(fen.to_string());
 
@@ -485,17 +408,23 @@ mod test {
             position.do_move(mv);
             position.undo_move(mv);
 
-            println!("{:?}", mv);
-            println!("{}", Bitboards::pretty(position.by_color_bb[Sides::WHITE]));
-
             assert_eq!(position.board, initial_position.board);
-            assert_eq!(position.game_ply, initial_position.game_ply);
             assert_eq!(position.side_to_move, initial_position.side_to_move);
             assert_eq!(position.by_color_bb, initial_position.by_color_bb);
             assert_eq!(position.by_type_bb, initial_position.by_type_bb);
-            assert_eq!(position.attacks_bb, initial_position.attacks_bb);
             assert_eq!(position.pinned_bb, initial_position.pinned_bb);
             assert_eq!(position.states.last().unwrap(), initial_position.states.last().unwrap());
         }
+    }
+
+    #[test]
+    fn pinned_bb() {
+        let bitboards = Rc::new(Bitboards::new());
+        let mut position = Position::new(Rc::clone(&bitboards));
+
+        let fen: &str = "rnbqkbnr/pp1ppppp/2p5/1B6/4P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2";
+        position.set(fen.to_string());
+
+        assert_eq!(position.pinned_bb, [EMPTY, EMPTY, EMPTY]);
     }
 }

@@ -14,7 +14,6 @@ impl UCI {
 
         loop {
             if argc == 1 {
-                buffer.clear();
                 let read_result = std::io::stdin().read_line(&mut buffer);
 
                 if read_result.is_err() {
@@ -22,45 +21,49 @@ impl UCI {
                 }
             }
 
-            let cmd = buffer.clone();
-            let args: Vec<&str> = cmd.trim().split(" ").collect();
-            let token = args[0];
-            buffer = args[1..].join(" ").to_string();
+            let cmd: String = buffer.clone();
+            let mut args: std::str::SplitWhitespace<'_> = cmd.trim().split_whitespace();
+            let mut token = args.next().unwrap_or("");
+            buffer.clear();
 
             if token == "uci" {
                 println!("id name Oxide");
                 println!("id author Theo Dammaretz");
                 println!("uciok");
+            } else if token == "xboard" {
+                println!("This engine does not support the xboard protocol.");
+                token = "quit";
             } else if token == "position" {
-                UCI::position(search, &buffer);
+                UCI::position(search, &mut args);
             } else if token == "go" {
-                UCI::go(search, &buffer);
+                UCI::go(search, &mut args);
             } else if token == "help" {
                 UCI::help();
-            } else if token == "quit" && argc == 1 {
-                break;
-            } else {
+            } else if token != "" && token.chars().nth(0).unwrap_or_default() != '#' {
                 println!("Unknown command: {}. Type help for more information", token);
+            }
+
+            if token == "quit" || argc > 1 {
+                break;
             }
         }
     }
 
-    fn position(search: &mut Search, cmd: &String) {
-        let token = cmd.split(" ").next().unwrap();
+    fn position(search: &mut Search, args: &mut std::str::SplitWhitespace<'_>) {
+        let token = args.next().unwrap_or("");
 
         if token == "startpos" {
             search.position.set(FEN_START_POSITION.to_string());
         } else if token == "fen" {
-            let fen = cmd.split(" ").skip(1).collect::<Vec<&str>>().join(" ");
+            let fen = args.collect::<Vec<&str>>().join(" ");
             search.position.set(fen);
         } else {
             println!("Unknown position command: {}. Type help for more information", token);
         }
     }
 
-    fn go(search: &mut Search, cmd: &String) {
+    fn go(search: &mut Search, args: &mut std::str::SplitWhitespace<'_>) {
         let mut limits = SearchLimits::new();
-        let mut args = cmd.split(" ");
         let mut token = args.next().unwrap_or("");
 
         while token != "" {

@@ -6,6 +6,7 @@ pub struct StateInfo {
     pub en_passant_square: Square,
     pub captured_piece: Piece,
     pub castling_rights: usize,
+    pub rule50: usize,
 }
 
 impl StateInfo {
@@ -14,6 +15,9 @@ impl StateInfo {
             en_passant_square: NONE_SQUARE,
             captured_piece: PieceType::NONE,
             castling_rights: CastlingRights::NONE,
+            rule50: 0,
         };
     }
 }
+
+pub const CASTLING_DESTINATION_BB: Bitboard = 0x7c0000000000007c;

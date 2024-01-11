@@ -90,23 +90,23 @@ impl Move {
 
 impl fmt::Debug for Move {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut to = self.to_sq();
+
         if self.type_of() == MoveTypes::CASTLING {
-            let castlint_string = match self.to_sq() {
-                0 => "O-O-O",
-                7 => "O-O",
-                56 => "o-o-o",
-                63 => "o-o",
+            to = match self.to_sq() {
+                0 => 0 + 2,
+                7 => 7 - 1,
+                56 => 56 + 2,
+                63 => 63 - 1,
                 _ => panic!("Invalid castling move"),
             };
-
-            return write!(f, "{}", castlint_string);
         }
 
         let promotion_string = match self.promotion_type() {
-            PieceType::KNIGHT => "=K",
-            PieceType::BISHOP => "=B",
-            PieceType::ROOK => "=R",
-            PieceType::QUEEN => "=Q",
+            PieceType::KNIGHT => " K",
+            PieceType::BISHOP => " B",
+            PieceType::ROOK => " R",
+            PieceType::QUEEN => " Q",
             PieceType::NONE => "",
             _ => panic!("Invalid promotion type"),
         };
@@ -115,7 +115,7 @@ impl fmt::Debug for Move {
             f,
             "{}{}{}",
             pretty_square(self.from_sq()),
-            pretty_square(self.to_sq()),
+            pretty_square(to),
             promotion_string
         );
     }

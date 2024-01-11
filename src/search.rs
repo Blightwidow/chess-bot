@@ -81,7 +81,7 @@ mod test {
     use crate::bitboards::Bitboards;
 
     #[test]
-    fn test_perft_startpos() {
+    fn perft_startpos() {
         let bitboards = Rc::new(Bitboards::new());
         let movegen = Movegen::new(Rc::clone(&bitboards));
         let position = Position::new(Rc::clone(&bitboards));
@@ -97,7 +97,24 @@ mod test {
     }
 
     #[test]
-    fn test_perft_debug() {
+    fn perft_kiwipete() {
+        let bitboards = Rc::new(Bitboards::new());
+        let movegen = Movegen::new(Rc::clone(&bitboards));
+        let position = Position::new(Rc::clone(&bitboards));
+        let mut search = Search::new(position, movegen);
+
+        search
+            .position
+            .set("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1".to_string());
+
+        assert_eq!(search.perft(1), 48);
+        assert_eq!(search.perft(2), 2039);
+        assert_eq!(search.perft(3), 97862);
+        assert_eq!(search.perft(4), 4085603);
+    }
+
+    #[test]
+    fn perft_edwards() {
         let bitboards = Rc::new(Bitboards::new());
         let movegen = Movegen::new(Rc::clone(&bitboards));
         let position = Position::new(Rc::clone(&bitboards));
