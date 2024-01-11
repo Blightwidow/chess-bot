@@ -55,10 +55,14 @@ impl Position {
         };
         let mut new_state = *self.states.last().unwrap();
 
-        assert!(color_of_piece(piece) == us);
-        assert!(type_of_piece(captured) != PieceType::KING);
+        #[cfg(debug_assertions)]
+        {
+            assert!(color_of_piece(piece) == us);
+            assert!(type_of_piece(captured) != PieceType::KING);
+        }
 
         if captured != PieceType::NONE {
+            #[cfg(debug_assertions)]
             assert!(color_of_piece(captured) == them);
 
             let captured_square: Square = match move_type {
@@ -70,6 +74,7 @@ impl Position {
         }
 
         if move_type == MoveTypes::PROMOTION {
+            #[cfg(debug_assertions)]
             assert!(mv.promotion_type() != PieceType::PAWN && mv.promotion_type() != PieceType::KING);
 
             self.remove_piece(piece, from);
@@ -107,6 +112,7 @@ impl Position {
     }
 
     pub fn undo_move(&mut self, mv: Move) {
+        #[cfg(debug_assertions)]
         assert!(mv.is_ok());
 
         self.side_to_move = self.side_to_move ^ 1;
@@ -118,13 +124,19 @@ impl Position {
         let move_type: MoveType = mv.type_of();
         let last_state: StateInfo = self.states.pop().unwrap();
 
-        assert!(self.board[from] == PieceType::NONE);
-        assert!(color_of_piece(piece) == us || move_type == MoveTypes::CASTLING);
-        assert!(type_of_piece(last_state.captured_piece) != PieceType::KING);
+        #[cfg(debug_assertions)]
+        {
+            assert!(self.board[from] == PieceType::NONE);
+            assert!(color_of_piece(piece) == us || move_type == MoveTypes::CASTLING);
+            assert!(type_of_piece(last_state.captured_piece) != PieceType::KING);
+        }
 
         if move_type == MoveTypes::PROMOTION {
-            assert!(type_of_piece(piece) == mv.promotion_type());
-            assert!(type_of_piece(piece) >= PieceType::KNIGHT && type_of_piece(piece) < PieceType::KING);
+            #[cfg(debug_assertions)]
+            {
+                assert!(type_of_piece(piece) == mv.promotion_type());
+                assert!(type_of_piece(piece) >= PieceType::KNIGHT && type_of_piece(piece) < PieceType::KING);
+            }
 
             // In case of promotion, replace the promoted piece by a pawn
             // before continuing to undo the move.
@@ -153,12 +165,16 @@ impl Position {
     }
 
     pub fn piece_on(&self, square: Square) -> Piece {
+        #[cfg(debug_assertions)]
         assert!(is_ok(square), "Invalid square {}", square);
+
         return self.board[square];
     }
 
     fn put_piece(&mut self, piece: Piece, square: Square) {
+        #[cfg(debug_assertions)]
         assert!(piece < 18);
+
         let bb: Bitboard = square_bb(square);
         let side = color_of_piece(piece);
 
@@ -170,7 +186,9 @@ impl Position {
     }
 
     fn remove_piece(&mut self, piece: Piece, square: Square) {
+        #[cfg(debug_assertions)]
         assert!(piece < 18);
+
         let bb: Bitboard = square_bb(square);
         let side = color_of_piece(piece);
 
@@ -183,12 +201,14 @@ impl Position {
 
     // This function is only for moving and does not handle captures
     fn move_piece(&mut self, piece: Piece, from: Square, to: Square) {
-        assert!(piece < 18);
-        assert!(is_ok(from));
-        assert!(is_ok(to));
-
-        assert!(self.board[from] == piece);
-        assert!(self.board[to] == PieceType::NONE);
+        #[cfg(debug_assertions)]
+        {
+            assert!(piece < 18);
+            assert!(is_ok(from));
+            assert!(is_ok(to));
+            assert!(self.board[from] == piece);
+            assert!(self.board[to] == PieceType::NONE);
+        }
 
         let bb_from: Bitboard = square_bb(from);
         let bb_to: Bitboard = square_bb(to);
@@ -203,6 +223,7 @@ impl Position {
     }
 
     fn castle(&mut self, side: Side, from: Square, to: Square, undo: bool) {
+        #[cfg(debug_assertions)]
         assert!(side == Sides::WHITE || side == Sides::BLACK);
 
         let king_side: bool = to > from;
@@ -245,6 +266,7 @@ impl Position {
     }
 
     pub fn checkers(&self, defending_side: Side) -> Vec<Square> {
+        #[cfg(debug_assertions)]
         assert!(defending_side == Sides::WHITE || defending_side == Sides::BLACK);
 
         let mut checkers: Vec<Square> = Vec::new();
@@ -279,6 +301,7 @@ impl Position {
     }
 
     fn pinned_bb(&self, side: Side) -> Bitboard {
+        #[cfg(debug_assertions)]
         assert!(side == Sides::WHITE || side == Sides::BLACK);
 
         let mut pinned_bb: Bitboard = EMPTY;
@@ -303,8 +326,6 @@ impl Position {
     }
 
     pub fn legal(&self, mv: Move) -> bool {
-        assert!(mv.is_ok());
-
         let us: Side = self.side_to_move;
         let them: Side = us ^ 1;
         let from: Square = mv.from_sq();
@@ -312,7 +333,11 @@ impl Position {
         let piece: Piece = self.piece_on(from);
         let move_type = mv.type_of();
 
-        assert!(color_of_piece(piece) == us);
+        #[cfg(debug_assertions)]
+        {
+            assert!(mv.is_ok());
+            assert!(color_of_piece(piece) == us);
+        }
 
         // En passant captures are a tricky special case. Because they are rather
         // uncommon, we do it simply by testing whether the king is attacked after
@@ -326,9 +351,12 @@ impl Position {
                 | self.by_type_bb[them][PieceType::QUEEN]
                 | self.by_type_bb[them][PieceType::BISHOP];
 
-            assert!(self.piece_on(captured_square) == make_piece(them, PieceType::PAWN));
-            assert!(self.piece_on(to) == PieceType::NONE);
-            assert!(self.piece_on(from) == make_piece(us, PieceType::PAWN));
+            #[cfg(debug_assertions)]
+            {
+                assert!(self.piece_on(captured_square) == make_piece(them, PieceType::PAWN));
+                assert!(self.piece_on(to) == PieceType::NONE);
+                assert!(self.piece_on(from) == make_piece(us, PieceType::PAWN));
+            }
 
             while attackers != EMPTY {
                 let attacker_square: Square = bits::pop(&mut attackers);

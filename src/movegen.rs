@@ -157,6 +157,8 @@ impl Movegen {
         target_bb: Bitboard,
     ) {
         let piece_type = type_of_piece(piece);
+
+        #[cfg(debug_assertions)]
         assert!(piece_type != PieceType::PAWN, "Invalid piece");
 
         let mut bitboard: Bitboard = position.by_type_bb[us][piece_type];
