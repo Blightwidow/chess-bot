@@ -289,7 +289,7 @@ impl Position {
 
     fn attacks_bb(&self, side: Side, occupied: Bitboard) -> Bitboard {
         let mut attacks_bb: Bitboard = EMPTY;
-        let mut opponents: Bitboard = self.by_color_bb[side] & !self.pinned_bb[side];
+        let mut opponents: Bitboard = self.by_color_bb[side];
 
         while opponents != EMPTY {
             let square: Square = bits::pop(&mut opponents);
@@ -389,7 +389,7 @@ impl Position {
         // If the moving piece is a king, check whether the destination square is
         // attacked by the opponent.
         if type_of_piece(piece) == PieceType::KING {
-            return self.attacks_bb(them, self.by_color_bb[Sides::BOTH] ^ square_bb(from)) & square_bb(to) == EMPTY;
+            return (self.attacks_bb(them, self.by_color_bb[Sides::BOTH] ^ square_bb(from))) & square_bb(to) == EMPTY;
         }
 
         // A non-king move is legal if and only if it is not pinned or it

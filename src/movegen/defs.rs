@@ -103,10 +103,10 @@ impl fmt::Debug for Move {
         }
 
         let promotion_string = match self.promotion_type() {
-            PieceType::KNIGHT => " K",
-            PieceType::BISHOP => " B",
-            PieceType::ROOK => " R",
-            PieceType::QUEEN => " Q",
+            PieceType::KNIGHT => "n",
+            PieceType::BISHOP => "b",
+            PieceType::ROOK => " r",
+            PieceType::QUEEN => "q",
             PieceType::NONE => "",
             _ => panic!("Invalid promotion type"),
         };

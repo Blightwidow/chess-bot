@@ -111,6 +111,7 @@ mod test {
         assert_eq!(search.perft(2), 2039);
         assert_eq!(search.perft(3), 97862);
         assert_eq!(search.perft(4), 4085603);
+        assert_eq!(search.perft(5), 193690690);
     }
 
     #[test]

@@ -116,7 +116,7 @@ impl Movegen {
                 while attack_bb != EMPTY {
                     let to: Square = bits::pop(&mut attack_bb);
 
-                    for piece in [PieceType::KNIGHT, PieceType::BISHOP, PieceType::ROOK, PieceType::QUEEN] {
+                    for piece in [PieceType::QUEEN, PieceType::ROOK, PieceType::BISHOP, PieceType::KNIGHT] {
                         movelist.push(Move::make(from, to, piece, MoveTypes::PROMOTION))
                     }
                 }
