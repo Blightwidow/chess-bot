@@ -31,6 +31,7 @@ impl Movegen {
 
     fn generate(&self, position: &Position, us: Side) -> Vec<Move> {
         let mut movelist: Vec<Move> = Vec::new();
+        movelist.reserve_exact(256);
         let checkers = position.checkers(us);
         let king_square = bits::lsb(position.by_type_bb[us][PieceType::KING]);
         let target_bb: Bitboard = match checkers.len() {
