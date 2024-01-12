@@ -46,7 +46,7 @@ impl Position {
         let them: Side = self.side_to_move ^ 1;
         let from: Square = mv.from_sq();
         let to: Square = mv.to_sq();
-        let mut piece: Piece = self.piece_on(from);
+        let piece: Piece = self.piece_on(from);
         let move_type = mv.type_of();
         let captured: Piece = match move_type {
             MoveTypes::EN_PASSANT => self.piece_on((to as isize - pawn_push(us)) as usize),

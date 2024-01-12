@@ -73,6 +73,7 @@ impl Position {
         }
     }
 
+    #[allow(dead_code)]
     pub fn fen(&self) -> String {
         let mut fen: String = String::new();
 

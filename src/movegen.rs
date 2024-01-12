@@ -22,13 +22,11 @@ impl Movegen {
 
     pub fn legal_moves(&self, position: &Position) -> Vec<Move> {
         let us = position.side_to_move;
-        let movelist = self.generate(position, us);
 
-        return movelist
-            .iter()
-            .map(|mv| *mv)
-            .filter(|mv: &Move| position.legal(*mv))
-            .collect();
+        let mut movelist = self.generate(position, us);
+        movelist.retain(|&mv| position.legal(mv));
+
+        return movelist;
     }
 
     fn generate(&self, position: &Position, us: Side) -> Vec<Move> {
