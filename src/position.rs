@@ -1,5 +1,6 @@
 pub mod defs;
 mod fen;
+mod test;
 
 use std::rc::Rc;
 
@@ -40,6 +41,7 @@ impl Position {
     // This assume that the move is legal
     // Illegal moves should be filtered out by the move generator before calling this function
     pub fn do_move(&mut self, mv: Move) {
+        #[cfg(debug_assertions)]
         assert!(mv.is_ok());
 
         let us: Side = self.side_to_move;
@@ -108,6 +110,7 @@ impl Position {
             true => new_state.rule50 + 1,
             false => 0,
         };
+        new_state.game_ply += 1;
         self.states.push(new_state);
     }
 
@@ -412,47 +415,8 @@ impl Position {
 
         return masks;
     }
-}
 
-#[cfg(test)]
-mod test {
-    use std::rc::Rc;
-
-    use super::*;
-    use crate::{bitboards::Bitboards, movegen::Movegen};
-
-    #[test]
-    fn do_undo() {
-        let bitboards = Rc::new(Bitboards::new());
-        let movegen = Movegen::new(Rc::clone(&bitboards));
-        let mut initial_position = Position::new(Rc::clone(&bitboards));
-        let mut position = Position::new(Rc::clone(&bitboards));
-
-        let fen: &str = "r3k2r/p1pNqpb1/bn2pnp1/3P4/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQkq - 0 1";
-        position.set(fen.to_string());
-        initial_position.set(fen.to_string());
-
-        for mv in movegen.legal_moves(&position) {
-            position.do_move(mv);
-            position.undo_move(mv);
-
-            assert_eq!(position.board, initial_position.board);
-            assert_eq!(position.side_to_move, initial_position.side_to_move);
-            assert_eq!(position.by_color_bb, initial_position.by_color_bb);
-            assert_eq!(position.by_type_bb, initial_position.by_type_bb);
-            assert_eq!(position.pinned_bb, initial_position.pinned_bb);
-            assert_eq!(position.states.last().unwrap(), initial_position.states.last().unwrap());
-        }
-    }
-
-    #[test]
-    fn pinned_bb() {
-        let bitboards = Rc::new(Bitboards::new());
-        let mut position = Position::new(Rc::clone(&bitboards));
-
-        let fen: &str = "rnbqkbnr/pp1ppppp/2p5/1B6/4P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2";
-        position.set(fen.to_string());
-
-        assert_eq!(position.pinned_bb, [EMPTY, EMPTY, EMPTY]);
+    pub fn zobrist() -> u64{
+        return 0u64;
     }
 }

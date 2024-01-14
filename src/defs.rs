@@ -88,11 +88,21 @@ pub fn distance(from: Square, to: Square) -> usize {
     return (rank_dist.abs().max(file_dist.abs())) as usize;
 }
 
+#[allow(dead_code)]
 pub fn pretty_square(square: Square) -> String {
     return format!(
         "{}{}",
         "abcdefgh".chars().nth(file_of(square)).unwrap(),
         rank_of(square) + 1
+    );
+}
+
+#[allow(dead_code)]
+pub fn pretty_piece(piece: Piece) -> String {
+    return format!(
+        "{}{}",
+        "xpnbrqk".chars().nth(type_of_piece(piece)).unwrap(),
+        "WB".chars().nth(color_of_piece(piece)).unwrap(),
     );
 }
 

@@ -4,7 +4,7 @@ impl Position {
     pub fn set(&mut self, fen: String) {
         let fen_parts: Vec<&str> = fen.split(' ').collect::<Vec<&str>>();
 
-        assert!(fen_parts.len() == 6);
+        assert!(fen_parts.len() >= 2);
 
         self.clear();
 
@@ -64,9 +64,14 @@ impl Position {
             self.states.last_mut().unwrap().en_passant_square = square_of(file, rank);
         }
 
-        self.states.last_mut().unwrap().rule50 = fen_parts[4].parse::<usize>().unwrap();
+        if fen_parts.len() > 4 {
+            self.states.last_mut().unwrap().rule50 = fen_parts[4].parse::<usize>().unwrap();
+        }
 
         // TODO: Add fullmove number
+        // if fen_parts.len() > 5 {
+        //     self.states.last_mut().unwrap().fullmove = fen_parts[5].parse::<usize>().unwrap();
+        // }
 
         for side in [Sides::WHITE, Sides::BLACK] {
             self.pinned_bb[side] = self.pinned_bb(side);

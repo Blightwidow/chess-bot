@@ -36,9 +36,6 @@ pub fn rank_bb(square: Square) -> Bitboard {
     return RANK_1BB << (square / 8) * 8;
 }
 
-pub const ROOK_TABLE_SIZE: usize = 0x19000;
-pub const BISHOP_TABLE_SIZE: usize = 0x1480;
-
 #[rustfmt::skip]
 pub const ROOK_MAGIC_NUMBERS: [Bitboard; NrOf::SQUARES] = [
     324259448050975248u64, 162139001189302336u64, 4647750006529359880u64, 144121785691422736u64,

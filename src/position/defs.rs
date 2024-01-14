@@ -7,6 +7,7 @@ pub struct StateInfo {
     pub captured_piece: Piece,
     pub castling_rights: usize,
     pub rule50: usize,
+    pub game_ply: usize,
 }
 
 impl StateInfo {
@@ -16,6 +17,7 @@ impl StateInfo {
             captured_piece: PieceType::NONE,
             castling_rights: CastlingRights::NONE,
             rule50: 0,
+            game_ply: 0,
         };
     }
 }

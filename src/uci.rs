@@ -1,7 +1,11 @@
+use std::time;
+
 use crate::search::{
     defs::{SearchLimits, FEN_START_POSITION},
     Search,
 };
+
+use crate::benchmark::FENS;
 
 pub struct UCI {}
 
@@ -33,10 +37,18 @@ impl UCI {
             } else if token == "xboard" {
                 println!("This engine does not support the xboard protocol.");
                 token = "quit";
+            } else if token == "isready" {
+                println!("readyok");
+            } else if token == "ucinewgame" {
+                search.position.set(FEN_START_POSITION.to_string());
             } else if token == "position" {
                 UCI::position(search, &mut args);
             } else if token == "go" {
                 UCI::go(search, &mut args);
+            } else if token == "setoption" {
+                UCI::option(search, &mut args);
+            } else if token == "bench" {
+                UCI::bench(search);
             } else if token == "help" {
                 UCI::help();
             } else if token != "" && token.chars().nth(0).unwrap_or_default() != '#' {
@@ -50,20 +62,44 @@ impl UCI {
     }
 
     fn position(search: &mut Search, args: &mut std::str::SplitWhitespace<'_>) {
-        let token = args.next().unwrap_or("");
+        let mut token = args.next().unwrap_or("");
 
         if token == "startpos" {
             search.position.set(FEN_START_POSITION.to_string());
+
+            // Consume the next token if it is 'moves'
+            token = args.next().unwrap_or("");
         } else if token == "fen" {
-            let fen = args.collect::<Vec<&str>>().join(" ");
+            let mut fen = String::new();
+
+            while token != "moves" && token != "" {
+                token = args.next().unwrap_or("");
+                fen += token;
+                fen += " ";
+            }
+
             search.position.set(fen);
-        } else {
-            println!("Unknown position command: {}. Type help for more information", token);
+        }
+
+        // Move to first move if any
+        token = args.next().unwrap_or("");
+
+        while token != "" {
+            let mv_string = token.to_ascii_lowercase();
+
+            for mv in search.movegen.legal_moves(&search.position) {
+                if mv_string == format!("{:?}", mv) {
+                    search.position.do_move(mv);
+                    break;
+                }
+            }
+
+            token = args.next().unwrap_or("");
         }
     }
 
     fn go(search: &mut Search, args: &mut std::str::SplitWhitespace<'_>) {
-        let mut limits = SearchLimits::new();
+        let mut limits = SearchLimits::default();
         let mut token = args.next().unwrap_or("");
 
         while token != "" {
@@ -71,13 +107,83 @@ impl UCI {
                 "perft" => {
                     limits.perft = args.next().unwrap_or("1").parse::<usize>().unwrap_or(1);
                 }
-                _ => println!("Unknown command: {}. Type help for more information", token),
+                "depth" => {
+                    limits.depth = args.next().unwrap_or("1").parse::<usize>().unwrap_or(1);
+                }
+                "ponder" => {
+                    limits.ponder = true;
+                }
+                "wtime" => {
+                    limits.white_time = args.next().unwrap_or("0").parse::<usize>().unwrap_or(0);
+                }
+                "btime" => {
+                    limits.black_time = args.next().unwrap_or("0").parse::<usize>().unwrap_or(0);
+                }
+                "winc" => {
+                    limits.white_inc = args.next().unwrap_or("0").parse::<usize>().unwrap_or(0);
+                }
+                "binc" => {
+                    limits.black_inc = args.next().unwrap_or("0").parse::<usize>().unwrap_or(0);
+                }
+                "movestogo" => {
+                    limits.moves_to_go = args.next().unwrap_or("0").parse::<usize>().unwrap_or(0);
+                }
+                "nodes" => {
+                    limits.nodes = args.next().unwrap_or("0").parse::<usize>().unwrap_or(0);
+                }
+                "mate" => {
+                    limits.mate = args.next().unwrap_or("0").parse::<usize>().unwrap_or(0);
+                }
+                "movetime" => {
+                    limits.movetime = args.next().unwrap_or("0").parse::<usize>().unwrap_or(0);
+                }
+                "infinite" => {
+                    limits.depth = usize::MAX;
+                }
+                _ => (),
             }
 
             token = args.next().unwrap_or("");
         }
 
-        let _ = search.run(limits);
+        search.run(limits);
+    }
+
+    fn option(search: &mut Search, args: &mut std::str::SplitWhitespace<'_>) {
+        let token = args.next().unwrap_or("");
+
+        while token != "" {
+            match token {
+                "name" => {
+                    let _ = args.next().unwrap_or("");
+                }
+                "value" => {
+                    let _ = args.next().unwrap_or("");
+                }
+                _ => (),
+            }
+        }
+    }
+
+    fn bench(search: &mut Search) {
+        let mut nodes: u128 = 0;
+        let mut count: usize = 1;
+        let elapsed = time::Instant::now();
+
+        for fen in FENS {
+            println!("\nPosition: {}/{}, ({})", count, FENS.len(), fen);
+            count += 1;
+            search.position.set(fen.to_string());
+            search.run(SearchLimits::default());
+            // nodes += search.nodes_searched;
+        }
+
+        let duration = time::Instant::now() - elapsed + time::Duration::from_millis(1); // Ensure positivity to avoid a 'divide by zero'
+
+        println!("\n===========================");
+        println!("Total time (ms) : {}", duration.as_millis());
+        println!("Nodes searched  : {}", nodes);
+        println!("Nodes/second    : {}", 1000 * nodes / duration.as_millis());
     }
 
     fn help() {
