@@ -1,23 +1,28 @@
 pub mod defs;
 mod tables;
+pub mod transposition;
 
 use crate::{defs::*, movegen::defs::Move, position::Position, search::defs::VALUE_INFINITE};
 
-use self::{defs::*, tables::*};
+use self::{defs::*, tables::*, transposition::TranspositionTable};
 
-pub struct Eval {}
+pub struct Eval {
+    pub transposition_table: TranspositionTable,
+}
 
 impl Eval {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            transposition_table: TranspositionTable::new(DEFAULT_HASH_SIZE),
+        }
     }
 
-    pub fn evaluate(&self, position: &Position) -> isize {
+    pub fn evaluate(&self, position: &Position) -> i16 {
         let us: Side = position.side_to_move;
         let them: Side = us ^ 1;
-        let mut middle_game: [isize; NrOf::SIDES] = [0; NrOf::SIDES];
-        let mut eng_game: [isize; NrOf::SIDES] = [0; NrOf::SIDES];
-        let mut phase: isize = 0;
+        let mut middle_game: [i16; NrOf::SIDES] = [0; NrOf::SIDES];
+        let mut eng_game: [i16; NrOf::SIDES] = [0; NrOf::SIDES];
+        let mut phase: i16 = 0;
 
         for square in RangeOf::SQUARES {
             let piece = position.board[square];
@@ -36,9 +41,9 @@ impl Eval {
             }
         }
 
-        let mg_score: isize = middle_game[us] - middle_game[them];
-        let eg_score: isize = eng_game[us] - eng_game[them];
-        let score: isize = match phase >= 24 {
+        let mg_score: i16 = middle_game[us] - middle_game[them];
+        let eg_score: i16 = eng_game[us] - eng_game[them];
+        let score: i16 = match phase >= 24 {
             true => mg_score,
             false => (mg_score * phase + eg_score * (24 - phase)) / 24,
         };
@@ -53,7 +58,7 @@ impl Eval {
         moves.sort_by_key(|mv| self.static_exchange_evaluation(position, *mv));
     }
 
-    fn static_exchange_evaluation(&self, position: &Position, mv: Move) -> isize {
+    fn static_exchange_evaluation(&self, position: &Position, mv: Move) -> i16 {
         let captured_piece = position.board[mv.to_sq()];
 
         if captured_piece == PieceType::NONE {
@@ -63,5 +68,9 @@ impl Eval {
         let piece = position.board[mv.from_sq()];
 
         return PIECE_VALUES_INITIAL[type_of_piece(captured_piece)] - PIECE_VALUES_INITIAL[type_of_piece(piece)];
+    }
+
+    pub fn resize_transposition_table(&mut self, megabytes: usize) {
+        self.transposition_table = TranspositionTable::new(megabytes);
     }
 }

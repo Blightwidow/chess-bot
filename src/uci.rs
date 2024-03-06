@@ -1,8 +1,11 @@
 use std::time;
 
-use crate::search::{
-    defs::{SearchLimits, FEN_START_POSITION},
-    Search,
+use crate::{
+    evaluate::defs::DEFAULT_HASH_SIZE,
+    search::{
+        defs::{SearchLimits, FEN_START_POSITION},
+        Search,
+    },
 };
 
 use crate::benchmark::FENS;
@@ -33,6 +36,7 @@ impl UCI {
             if token == "uci" {
                 println!("id name Oxide");
                 println!("id author Theo Dammaretz");
+                println!("option name Hash type spin default 128 min 1 max 512");
                 println!("uciok");
             } else if token == "xboard" {
                 println!("This engine does not support the xboard protocol.");
@@ -105,19 +109,19 @@ impl UCI {
         while token != "" {
             match token {
                 "perft" => {
-                    limits.perft = args.next().unwrap_or("1").parse::<usize>().unwrap_or(1);
+                    limits.perft = args.next().unwrap_or("1").parse::<u8>().unwrap_or(1);
                 }
                 "depth" => {
-                    limits.depth = args.next().unwrap_or("1").parse::<usize>().unwrap_or(1);
+                    limits.depth = args.next().unwrap_or("1").parse::<u8>().unwrap_or(1);
                 }
                 "ponder" => {
                     limits.ponder = true;
                 }
                 "wtime" => {
-                    limits.white_time = args.next().unwrap_or("0").parse::<usize>().unwrap_or(0);
+                    limits.white_time = args.next().unwrap_or("0").parse::<u64>().unwrap_or(0);
                 }
                 "btime" => {
-                    limits.black_time = args.next().unwrap_or("0").parse::<usize>().unwrap_or(0);
+                    limits.black_time = args.next().unwrap_or("0").parse::<u64>().unwrap_or(0);
                 }
                 "winc" => {
                     limits.white_inc = args.next().unwrap_or("0").parse::<usize>().unwrap_or(0);
@@ -138,7 +142,7 @@ impl UCI {
                     limits.movetime = args.next().unwrap_or("0").parse::<usize>().unwrap_or(0);
                 }
                 "infinite" => {
-                    limits.depth = usize::MAX;
+                    limits.depth = u8::MAX;
                 }
                 _ => (),
             }
@@ -150,23 +154,33 @@ impl UCI {
     }
 
     fn option(search: &mut Search, args: &mut std::str::SplitWhitespace<'_>) {
-        let token = args.next().unwrap_or("");
+        let mut token = args.next().unwrap_or("");
+        let mut selected_option = "";
 
         while token != "" {
             match token {
                 "name" => {
-                    let _ = args.next().unwrap_or("");
+                    selected_option = args.next().unwrap_or("");
                 }
                 "value" => {
-                    let _ = args.next().unwrap_or("");
+                    let value = args.next().unwrap_or("");
+
+                    match selected_option {
+                        "Hash" => search.eval.resize_transposition_table(
+                            value.parse::<usize>().unwrap_or(DEFAULT_HASH_SIZE).min(512).max(1),
+                        ),
+                        _ => (),
+                    }
                 }
                 _ => (),
             }
+
+            token = args.next().unwrap_or("");
         }
     }
 
     fn bench(search: &mut Search) {
-        let mut nodes: u128 = 0;
+        let mut nodes: usize = 0;
         let mut count: usize = 1;
         let elapsed = time::Instant::now();
 
@@ -175,7 +189,7 @@ impl UCI {
             count += 1;
             search.position.set(fen.to_string());
             search.run(SearchLimits::default());
-            // nodes += search.nodes_searched;
+            nodes += search.nodes_searched;
         }
 
         let duration = time::Instant::now() - elapsed + time::Duration::from_millis(1); // Ensure positivity to avoid a 'divide by zero'
@@ -183,7 +197,7 @@ impl UCI {
         println!("\n===========================");
         println!("Total time (ms) : {}", duration.as_millis());
         println!("Nodes searched  : {}", nodes);
-        println!("Nodes/second    : {}", 1000 * nodes / duration.as_millis());
+        println!("Nodes/second    : {}", 1000 * nodes / duration.as_millis() as usize);
     }
 
     fn help() {

@@ -21,6 +21,7 @@ pub struct Position {
     pub side_to_move: Side,
     pub states: Vec<StateInfo>,
     pub castling_masks: [CastlingRight; NrOf::SQUARES],
+    pub zobrist: u64,
     bitboards: Rc<Bitboards>,
 }
 
@@ -35,6 +36,7 @@ impl Position {
             side_to_move: Sides::WHITE,
             states: vec![StateInfo::new()],
             castling_masks: Position::castling_masks(),
+            zobrist: 0u64,
         };
     }
 
@@ -346,13 +348,9 @@ impl Position {
         // uncommon, we do it simply by testing whether the king is attacked after
         // the move is made.
         if move_type == MoveTypes::EN_PASSANT {
-            let king_bb: Bitboard = self.by_type_bb[us][PieceType::KING];
             let captured_square: Square = (to as isize - pawn_push(us)) as usize;
             let occupied =
-                (self.by_color_bb[Sides::BOTH] ^ square_bb(from) ^ square_bb(captured_square)) | square_bb(to);
-            let mut attackers = self.by_type_bb[them][PieceType::ROOK]
-                | self.by_type_bb[them][PieceType::QUEEN]
-                | self.by_type_bb[them][PieceType::BISHOP];
+                (self.by_color_bb[Sides::BOTH] & !square_bb(from) & !square_bb(captured_square)) | square_bb(to);
 
             #[cfg(debug_assertions)]
             {
@@ -361,18 +359,7 @@ impl Position {
                 assert!(self.piece_on(from) == make_piece(us, PieceType::PAWN));
             }
 
-            while attackers != EMPTY {
-                let attacker_square: Square = bits::pop(&mut attackers);
-                let attack_bb: Bitboard =
-                    self.bitboards
-                        .attack_bb(self.piece_on(attacker_square), attacker_square, occupied);
-
-                if attack_bb & king_bb != EMPTY {
-                    return false;
-                }
-            }
-
-            return true;
+            return self.attacks_bb(them, occupied) & self.by_type_bb[us][PieceType::KING] == EMPTY;
         }
 
         // Castling moves generation does not check if the castling path is clear of
@@ -414,9 +401,5 @@ impl Position {
         masks[square_of(4, 7)] = CastlingRights::BLACK;
 
         return masks;
-    }
-
-    pub fn zobrist() -> u64{
-        return 0u64;
     }
 }

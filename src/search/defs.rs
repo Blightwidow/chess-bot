@@ -2,12 +2,13 @@ use crate::defs::{Side, Sides};
 
 pub const FEN_START_POSITION: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+#[derive(Clone, Copy, PartialEq)]
 pub struct SearchLimits {
-    pub perft: usize,
-    pub depth: usize,
+    pub perft: u8,
+    pub depth: u8,
     pub ponder: bool,
-    pub white_time: usize,
-    pub black_time: usize,
+    pub white_time: u64,
+    pub black_time: u64,
     pub white_inc: usize,
     pub black_inc: usize,
     pub moves_to_go: usize,
@@ -20,10 +21,10 @@ impl SearchLimits {
     pub fn default() -> SearchLimits {
         SearchLimits {
             perft: 0,
-            depth: 13,
+            depth: 12,
             ponder: false,
-            white_time: usize::MAX,
-            black_time: usize::MAX,
+            white_time: u64::MAX,
+            black_time: u64::MAX,
             white_inc: 0,
             black_inc: 0,
             moves_to_go: 0,
@@ -33,7 +34,7 @@ impl SearchLimits {
         }
     }
 
-    pub fn time(&self, side: Side) -> usize {
+    pub fn time(&self, side: Side) -> u64 {
         return match side {
             Sides::WHITE => self.white_time,
             Sides::BLACK => self.black_time,
@@ -42,8 +43,8 @@ impl SearchLimits {
     }
 }
 
-pub const VALUE_ZERO: isize = 0;
-pub const VALUE_DRAW: isize = VALUE_ZERO;
-pub const VALUE_MATE: isize = 32000;
-pub const VALUE_INFINITE: isize = 32001;
-pub const VALUE_NONE: isize = 32002;
+pub const VALUE_ZERO: i16 = 0;
+pub const VALUE_DRAW: i16 = VALUE_ZERO;
+pub const VALUE_MATE: i16 = 32000;
+pub const VALUE_INFINITE: i16 = 32001;
+pub const VALUE_NONE: i16 = 32002;

@@ -7,6 +7,7 @@ mod movegen;
 mod position;
 mod search;
 mod uci;
+mod time;
 
 use std::rc::Rc;
 

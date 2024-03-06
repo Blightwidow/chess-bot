@@ -1,11 +1,11 @@
 use crate::defs::NrOf;
 
-pub const GAME_PHASE_INCREMENT: [isize; NrOf::PIECE_TYPES] = [0, 0, 1, 1, 2, 4, 0];
-pub const PIECE_VALUES_INITIAL: [isize; NrOf::PIECE_TYPES] = [0, 100, 300, 300, 500, 900, 0];
-pub const PIECE_VALUES_MG: [isize; NrOf::PIECE_TYPES] = [0, 82, 337, 365, 477, 1025, 0];
-pub const PIECE_VALUES_EG: [isize; NrOf::PIECE_TYPES] = [0, 94, 281, 297, 512, 936, 0];
+pub const GAME_PHASE_INCREMENT: [i16; NrOf::PIECE_TYPES] = [0, 0, 1, 1, 2, 4, 0];
+pub const PIECE_VALUES_INITIAL: [i16; NrOf::PIECE_TYPES] = [0, 100, 300, 300, 500, 900, 0];
+pub const PIECE_VALUES_MG: [i16; NrOf::PIECE_TYPES] = [0, 82, 337, 365, 477, 1025, 0];
+pub const PIECE_VALUES_EG: [i16; NrOf::PIECE_TYPES] = [0, 94, 281, 297, 512, 936, 0];
 
-pub const PIECE_SQUARE_MG_TABLES: [[isize; NrOf::SQUARES]; NrOf::PIECE_TYPES] = [
+pub const PIECE_SQUARE_MG_TABLES: [[i16; NrOf::SQUARES]; NrOf::PIECE_TYPES] = [
     [0; NrOf::SQUARES],
     PAWN_MG_TABLE,
     KNIGHT_MG_TABLE,
@@ -14,7 +14,7 @@ pub const PIECE_SQUARE_MG_TABLES: [[isize; NrOf::SQUARES]; NrOf::PIECE_TYPES] = 
     QUEEN_MG_TABLE,
     KING_MG_TABLE,
 ];
-pub const PIECE_SQUARE_EG_TABLES: [[isize; NrOf::SQUARES]; NrOf::PIECE_TYPES] = [
+pub const PIECE_SQUARE_EG_TABLES: [[i16; NrOf::SQUARES]; NrOf::PIECE_TYPES] = [
     [0; NrOf::SQUARES],
     PAWN_EG_TABLE,
     KNIGHT_EG_TABLE,
@@ -25,7 +25,7 @@ pub const PIECE_SQUARE_EG_TABLES: [[isize; NrOf::SQUARES]; NrOf::PIECE_TYPES] = 
 ];
 
 #[rustfmt::skip]
-const PAWN_MG_TABLE: [isize; NrOf::SQUARES] = [
+const PAWN_MG_TABLE: [i16; NrOf::SQUARES] = [
     0000, 0000, 0000, 0000, 0000, 0000, 0000, 0000,
     0098, 0134, 0061, 0095, 0068, 0126, 0034, -011,
     -006, 0007, 0026, 0031, 0065, 0056, 0025, -020,
@@ -37,7 +37,7 @@ const PAWN_MG_TABLE: [isize; NrOf::SQUARES] = [
 ];
 
 #[rustfmt::skip]
-const PAWN_EG_TABLE: [isize; NrOf::SQUARES] = [
+const PAWN_EG_TABLE: [i16; NrOf::SQUARES] = [
     0000, 0000, 0000, 0000, 0000, 0000, 0000, 0000,
     0178, 0173, 0158, 0134, 0147, 0132, 0165, 0187,
     0094, 0100, 0085, 0067, 0056, 0053, 0082, 0084,
@@ -49,7 +49,7 @@ const PAWN_EG_TABLE: [isize; NrOf::SQUARES] = [
 ];
 
 #[rustfmt::skip]
-const KNIGHT_MG_TABLE: [isize; NrOf::SQUARES] = [
+const KNIGHT_MG_TABLE: [i16; NrOf::SQUARES] = [
     -167, -089, -034, -049, 0061, -097, -015, -107,
     -073, -041, 0072, 0036, 0023, 0062, 0007, -017,
     -047, 0060, 0037, 0065, 0084, 0129, 0073, 0044,
@@ -61,7 +61,7 @@ const KNIGHT_MG_TABLE: [isize; NrOf::SQUARES] = [
 ];
 
 #[rustfmt::skip]
-const KNIGHT_EG_TABLE: [isize; NrOf::SQUARES] = [
+const KNIGHT_EG_TABLE: [i16; NrOf::SQUARES] = [
     -058, -038, -013, -028, -031, -027, -063, -099,
     -025, -008, -025, -002, -009, -025, -024, -052,
     -024, -020, 0010, 0009, -001, -009, -019, -041,
@@ -73,7 +73,7 @@ const KNIGHT_EG_TABLE: [isize; NrOf::SQUARES] = [
 ];
 
 #[rustfmt::skip]
-const BISHOP_MG_TABLE: [isize; NrOf::SQUARES] = [
+const BISHOP_MG_TABLE: [i16; NrOf::SQUARES] = [
     -029, 0004, -082, -037, -025, -042, 0007, -008,
     -026, 0016, -018, -013, 0030, 0059, 0018, -047,
     -016, 0037, 0043, 0040, 0035, 0050, 0037, -002,
@@ -85,7 +85,7 @@ const BISHOP_MG_TABLE: [isize; NrOf::SQUARES] = [
 ];
 
 #[rustfmt::skip]
-const BISHOP_EG_TABLE: [isize; NrOf::SQUARES] = [
+const BISHOP_EG_TABLE: [i16; NrOf::SQUARES] = [
     -014, -021, -011, -008, -007, -009, -017, -024,
     -008, -004, 0007, -012, -003, -013, -004, -014,
     0002, -008, 0000, -001, -002, 0006, 0000, 0004,
@@ -97,7 +97,7 @@ const BISHOP_EG_TABLE: [isize; NrOf::SQUARES] = [
 ];
 
 #[rustfmt::skip]
-const ROOK_MG_TABLE: [isize; NrOf::SQUARES] = [
+const ROOK_MG_TABLE: [i16; NrOf::SQUARES] = [
     0032, 0042, 0032, 0051, 0063, 0009, 0031, 0043,
     0027, 0032, 0058, 0062, 0080, 0067, 0026, 0044,
     -005, 0019, 0026, 0036, 0017, 0045, 0061, 0016,
@@ -109,7 +109,7 @@ const ROOK_MG_TABLE: [isize; NrOf::SQUARES] = [
 ];
 
 #[rustfmt::skip]
-const ROOK_EG_TABLE: [isize; NrOf::SQUARES] = [
+const ROOK_EG_TABLE: [i16; NrOf::SQUARES] = [
     0013, 0010, 0018, 0015, 0012, 0012, 0008, 0005,
     0011, 0013, 0013, 0011, -003, 0003, 0008, 0003,
     0007, 0007, 0007, 0005, 0004, -003, -005, -003,
@@ -121,7 +121,7 @@ const ROOK_EG_TABLE: [isize; NrOf::SQUARES] = [
 ];
 
 #[rustfmt::skip]
-const QUEEN_MG_TABLE: [isize; NrOf::SQUARES] = [
+const QUEEN_MG_TABLE: [i16; NrOf::SQUARES] = [
     -028, 0000, 0029, 0012, 0059, 0044, 0043, 0045,
     -024, -039, -005, 0001, -016, 0057, 0028, 0054,
     -013, -017, 0007, 0008, 0029, 0056, 0047, 0057,
@@ -133,7 +133,7 @@ const QUEEN_MG_TABLE: [isize; NrOf::SQUARES] = [
 ];
 
 #[rustfmt::skip]
-const QUEEN_EG_TABLE: [isize; NrOf::SQUARES] = [
+const QUEEN_EG_TABLE: [i16; NrOf::SQUARES] = [
     -009, 0022, 0022, 0027, 0027, 0019, 0010, 0020,
     -017, 0020, 0032, 0041, 0058, 0025, 0030, 0000,
     -020, 0006, 0009, 0049, 0047, 0035, 0019, 0009,
@@ -145,7 +145,7 @@ const QUEEN_EG_TABLE: [isize; NrOf::SQUARES] = [
 ];
 
 #[rustfmt::skip]
-const KING_MG_TABLE: [isize; NrOf::SQUARES] = [
+const KING_MG_TABLE: [i16; NrOf::SQUARES] = [
     -065, 0023, 0016, -015, -056, -034, 0002, 0013,
     0029, -001, -020, -007, -008, -004, -038, -029,
     -009, 0024, 0002, -016, -020, 0006, 0022, -022,
@@ -157,7 +157,7 @@ const KING_MG_TABLE: [isize; NrOf::SQUARES] = [
 ];
 
 #[rustfmt::skip]
-const KING_EG_TABLE: [isize; NrOf::SQUARES] = [
+const KING_EG_TABLE: [i16; NrOf::SQUARES] = [
     -074, -035, -018, -018, -011, 0015, 0004, -017,
     -012, 0017, 0014, 0017, 0017, 0038, 0023, 0011,
     0010, 0017, 0023, 0015, 0020, 0045, 0044, 0013,

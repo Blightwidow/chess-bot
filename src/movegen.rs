@@ -22,16 +22,21 @@ impl Movegen {
 
     pub fn legal_moves(&self, position: &Position) -> Vec<Move> {
         let us = position.side_to_move;
+        let king_square: Square = bits::lsb(position.by_type_bb[us][PieceType::KING]);
 
         let mut movelist = self.generate(position, us);
-        movelist.retain(|&mv| position.legal(mv));
+        movelist.retain(|&mv| {
+            (position.pinned_bb[us] & square_bb(mv.from_sq()) == EMPTY
+                && king_square != mv.from_sq()
+                && mv.type_of() != MoveTypes::EN_PASSANT)
+                || position.legal(mv)
+        });
 
         return movelist;
     }
 
     fn generate(&self, position: &Position, us: Side) -> Vec<Move> {
-        let mut movelist: Vec<Move> = Vec::new();
-        movelist.reserve_exact(256);
+        let mut movelist: Vec<Move> = Vec::with_capacity(256);
         let checkers = position.checkers(us);
         let king_square = bits::lsb(position.by_type_bb[us][PieceType::KING]);
         let target_bb: Bitboard = match checkers.len() {

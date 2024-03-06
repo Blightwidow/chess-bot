@@ -90,6 +90,12 @@ impl Move {
 
 impl fmt::Debug for Move {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.data == 0 {
+            return write!(f, "0000");
+        } else if self.data == 65 {
+            return write!(f, "0000");
+        }
+
         let mut to = self.to_sq();
 
         if self.type_of() == MoveTypes::CASTLING {
@@ -105,7 +111,7 @@ impl fmt::Debug for Move {
         let promotion_string = match self.promotion_type() {
             PieceType::KNIGHT => "n",
             PieceType::BISHOP => "b",
-            PieceType::ROOK => " r",
+            PieceType::ROOK => "r",
             PieceType::QUEEN => "q",
             PieceType::NONE => "",
             _ => panic!("Invalid promotion type"),
