@@ -48,26 +48,7 @@ impl Eval {
             false => (mg_score * phase + eg_score * (24 - phase)) / 24,
         };
 
-        // Grain of 1/50 of a pawn unit
-        let grained_score = (score * PAWN_UNIT / 50) * 50 / PAWN_UNIT;
-
-        return grained_score.min(VALUE_INFINITE).max(-VALUE_INFINITE);
-    }
-
-    pub fn order_moves(&self, position: &Position, moves: &mut [Move]) {
-        moves.sort_by_key(|mv| self.static_exchange_evaluation(position, *mv));
-    }
-
-    fn static_exchange_evaluation(&self, position: &Position, mv: Move) -> i16 {
-        let captured_piece = position.board[mv.to_sq()];
-
-        if captured_piece == PieceType::NONE {
-            return 0;
-        }
-
-        let piece = position.board[mv.from_sq()];
-
-        return PIECE_VALUES_INITIAL[type_of_piece(captured_piece)] - PIECE_VALUES_INITIAL[type_of_piece(piece)];
+        return score.min(VALUE_INFINITE).max(-VALUE_INFINITE);
     }
 
     pub fn resize_transposition_table(&mut self, megabytes: usize) {

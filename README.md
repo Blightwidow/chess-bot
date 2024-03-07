@@ -29,15 +29,11 @@ cargo build -r
 
 - Negamax
 - Iterative deepening
-- Aspiration window
-- Move ordering
-    - SEE
 
 ### Evaluation
 
 - Centipawn scaling
 - Tapered piece square table
-- Grain of 1/256 pawn value
 
 ## Acknowledgements
 
